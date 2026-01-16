@@ -8,7 +8,6 @@
 
 ## 📌 Visão Geral
 
-<<<<<<< HEAD
 Este projeto é uma **API RESTful** desenvolvida em **Java + Spring Boot** para resolver o desafio de gerenciamento de catálogo musical. 
 Ele implementa padrões de mercado para garantir escalabilidade, segurança e manutenibilidade, servindo como uma base sólida para sistemas corporativos.
 
@@ -29,11 +28,11 @@ O projeto segue uma **Arquitetura em Camadas (Layered Architecture)** rigorosa p
 
 ```mermaid
 graph TD
-    Client[Cliente (Web/Mobile)] -->|HTTP Request| Controller
+    Client["Cliente (Web/Mobile)"] -->|HTTP Request| Controller
     Controller -->|DTO| Service
     Service -->|Entity| Repository
-    Repository -->|SQL| Database[(PostgreSQL)]
-    Service -.->|File Stream| MinIO[(Object Storage)]
+    Repository -->|SQL| Database[("PostgreSQL")]
+    Service -.->|File Stream| MinIO[("Object Storage")]
 ```
 
 ### 📂 Estrutura de Pastas (ASCII)
@@ -55,25 +54,24 @@ src/main/java/com/wendrewnick/musicmanager
 
 | Tecnologia | Versão | Função Principal |
 | :--- | :--- | :--- |
-| **Java** | 17 | Linguagem de programação (LTS). |
-| **Spring Boot** | 3.x | Framework para desenvolvimento ágil. |
+| **Java** | 21 | Linguagem de programação (LTS). |
+| **Spring Boot** | 3.2.2 | Framework para desenvolvimento ágil. |
 | **PostgreSQL** | 15+ | Banco de dados relacional robusto. |
 | **Flyway** | 9.x | Versionamento (Migrations) do Banco de Dados. |
-| **MinIO** | Latest | Object Storage para upload de imagens. |
+| **MinIO** | 8.5.7 | Object Storage para upload de imagens. |
 | **Docker** | Latest | Orquestração de containers e ambiente. |
 | **Spring Security** | 6.x | Segurança, Autenticação e Autorização. |
-| **JWT** | 0.11.5 | JSON Web Token para sessões stateless. |
-| **Bucket4j** | 8.x | Implementação de Rate Limiting. |
-| **Lombok** | 1.18 | Redução de código boilerplate. |
+| **JWT (JJWT)** | 0.12.3 | JSON Web Token para sessões stateless. |
+| **Bucket4j** | 8.7.0 | Implementação de Rate Limiting. |
+| **Lombok** | 1.18.x | Redução de código boilerplate. |
 
 ---
 
 ## 🚀 Como Executar (Guia Passo-a-Passo)
 
 Pré-requisito único: **Docker** instalado e rodando. Nada mais.
-=======
+
 Escolha seu sistema operacional e o método de instalação preferido.
->>>>>>> 91f63b293ae54e4f9998e20c9caad4fae9faf7ca
 
 ### 🪟 Windows
 
@@ -122,10 +120,10 @@ O sistema cria automaticamente um usuário administrador na primeira execução:
 
 ## ✅ Decisões Técnicas
 
-1.  **JWT com Refresh Token:** Decidimos implementar um fluxo completo de renovação de token para garantir segurança (tokens de acesso curtos) sem prejudicar a experiência do usuário (login persistente seguro).
-2.  **MinIO para Uploads:** Em vez de salvar imagens no disco do servidor (o que quebraria em ambientes de nuvem efêmeros), utilizamos um Object Storage compatível com S3. Isso torna a migração para AWS S3 transparente.
-3.  **Rate Limiting:** Implementado via filtro de Servlet para proteger a API de abusos, garantindo disponibilidade mesmo sob carga.
-4.  **Installer Scripts:** Criamos scripts de inicialização (`.bat`/`.sh`) para abstrair a complexidade do Docker Compose para avaliadores ou usuários menos técnicos.
+1.  **JWT com Refresh Token:** Eu decidi implementar um fluxo completo de renovação de token para garantir segurança (tokens de acesso curtos) sem prejudicar a experiência do usuário (login persistente seguro).
+2.  **MinIO para Uploads:** Em vez de salvar imagens no disco do servidor (o que quebraria em ambientes de nuvem efêmeros), eu utilizei um Object Storage compatível com S3. Isso torna a migração para AWS S3 transparente.
+3.  **Rate Limiting:** Eu implementei um filtro de Servlet (Bucket4j) para proteger a API de abusos, garantindo disponibilidade mesmo sob carga.
+4.  **Installer Scripts:** Eu criei scripts de inicialização (`.bat`/`.sh`) para abstrair a complexidade do Docker Compose para avaliadores ou usuários menos técnicos.
 
 ---
 
