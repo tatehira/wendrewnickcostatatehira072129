@@ -1,4 +1,4 @@
-package com.wendrewnick.musicmanager.util;
+package com.wendrewnick.musicmanager.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 @Component
-public class JwtUtil {
+public class JwtService {
 
     @Value("${jwt.secret}")
     private String secret;

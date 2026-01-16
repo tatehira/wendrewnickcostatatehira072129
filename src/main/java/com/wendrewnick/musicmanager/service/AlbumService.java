@@ -1,90 +1,18 @@
 package com.wendrewnick.musicmanager.service;
 
 import com.wendrewnick.musicmanager.dto.AlbumDTO;
-import com.wendrewnick.musicmanager.entity.Album;
-import com.wendrewnick.musicmanager.entity.Artist;
-import com.wendrewnick.musicmanager.exception.ResourceNotFoundException;
-import com.wendrewnick.musicmanager.repository.AlbumRepository;
-import com.wendrewnick.musicmanager.repository.ArtistRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
-@Service
-@RequiredArgsConstructor
-public class AlbumService {
+public interface AlbumService {
+    Page<AlbumDTO> findAll(String title, Pageable pageable);
 
-    private final AlbumRepository albumRepository;
-    private final ArtistRepository artistRepository;
-    private final MinioService minioService;
+    AlbumDTO findById(UUID id);
 
-    @Transactional(readOnly = true)
-    public Page<AlbumDTO> findAll(String title, Pageable pageable) {
-        Page<Album> albums;
-        if (title != null && !title.isBlank()) {
-            albums = albumRepository.findByTitleContainingIgnoreCase(title, pageable);
-        } else {
-            albums = albumRepository.findAll(pageable);
-        }
-        return albums.map(this::toDTO);
-    }
+    AlbumDTO create(AlbumDTO albumDTO, MultipartFile image);
 
-    @Transactional(readOnly = true)
-    public AlbumDTO findById(UUID id) {
-        return toDTO(getEntityById(id));
-    }
-
-    @Transactional
-    public AlbumDTO create(AlbumDTO albumDTO, MultipartFile image) {
-        Artist artist = artistRepository.findById(albumDTO.getArtistId())
-                .orElseThrow(() -> new ResourceNotFoundException("Artist not found"));
-
-        String coverKey = null;
-        if (image != null && !image.isEmpty()) {
-            coverKey = minioService.uploadFile(image);
-        }
-
-        Album album = Album.builder()
-                .title(albumDTO.getTitle())
-                .year(albumDTO.getYear())
-                .artist(artist)
-                .coverUrl(coverKey) // Store key, not URL
-                .build();
-
-        return toDTO(albumRepository.save(album));
-    }
-    
-    @Transactional
-    public void delete(UUID id) {
-        if (!albumRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Album not found with id: " + id);
-        }
-        albumRepository.deleteById(id);
-    }
-
-    private Album getEntityById(UUID id) {
-        return albumRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Album not found with id: " + id));
-    }
-
-    private AlbumDTO toDTO(Album album) {
-        String presignedUrl = null;
-        if (album.getCoverUrl() != null) {
-            presignedUrl = minioService.getPresignedUrl(album.getCoverUrl());
-        }
-
-        return AlbumDTO.builder()
-                .id(album.getId())
-                .title(album.getTitle())
-                .year(album.getYear())
-                .artistId(album.getArtist().getId())
-                .artistName(album.getArtist().getName())
-                .coverUrl(presignedUrl)
-                .build();
-    }
+    void delete(UUID id);
 }

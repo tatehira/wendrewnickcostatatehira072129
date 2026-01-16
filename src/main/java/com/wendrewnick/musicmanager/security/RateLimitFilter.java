@@ -1,8 +1,8 @@
-package com.wendrewnick.musicmanager.config;
+package com.wendrewnick.musicmanager.security;
 
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
-import io.github.bucket4j.Refill;
+
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -30,10 +30,8 @@ public class RateLimitFilter implements Filter {
         HttpServletResponse response = (HttpServletResponse) servletResponse;
 
         String ip = request.getRemoteAddr();
-        // Simple IP-based rate limiting for now. In a real scenario with Auth, use User ID.
-        // The requirement says "por usuário", but for unauthenticated endpoints or before auth, IP is the only way.
-        // We will stick to IP for simplicity in this filter, or check Principal if available.
-        
+        // Simple IP-based rate limiting for now.
+
         Bucket bucket = cache.computeIfAbsent(ip, this::createNewBucket);
 
         if (bucket.tryConsume(1)) {
@@ -46,7 +44,10 @@ public class RateLimitFilter implements Filter {
 
     private Bucket createNewBucket(String key) {
         // 10 requests per minute
-        Bandwidth limit = Bandwidth.classic(10, Refill.greedy(10, Duration.ofMinutes(1)));
+        Bandwidth limit = Bandwidth.builder()
+                .capacity(10)
+                .refillGreedy(10, Duration.ofMinutes(1))
+                .build();
         return Bucket.builder()
                 .addLimit(limit)
                 .build();

@@ -1,4 +1,4 @@
-package com.wendrewnick.musicmanager.service;
+package com.wendrewnick.musicmanager.security;
 
 import com.wendrewnick.musicmanager.repository.UserRepository;
 import lombok.RequiredArgsConstructor;

@@ -13,11 +13,9 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ArtistDTO {
-    
-    // For Response
+
     private UUID id;
 
-    // For Request
     @NotBlank(message = "Name is required")
     private String name;
 }
