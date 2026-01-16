@@ -45,7 +45,11 @@ public class AlbumController {
     @Operation(summary = "Criar um novo álbum", description = "Upload de imagem e dados")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<AlbumDTO> createAlbum(
+<<<<<<< HEAD
             @Parameter(description = "Dados do álbum", content = @Content(mediaType = "application/json")) @RequestPart("data") @Valid AlbumDTO albumDTO,
+=======
+            @RequestPart("data") @Valid AlbumDTO albumDTO,
+>>>>>>> 14ca7b9a25fc35d9ac5e58e55ae65b885682abee
             @RequestPart(value = "image", required = false) MultipartFile image) {
         return ResponseEntity.status(HttpStatus.CREATED).body(albumService.create(albumDTO, image));
     }
