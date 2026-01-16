@@ -9,7 +9,7 @@ echo ======================================================
 echo.
 
 REM Executa o script PowerShell ignorando politicas de execucao restritas
-PowerShell -NoProfile -ExecutionPolicy Bypass -File "%~dp0installer.ps1"
+PowerShell -NoProfile -ExecutionPolicy Bypass -File "%~dp0setup-core.ps1"
 
 if %errorlevel% neq 0 (
     echo.

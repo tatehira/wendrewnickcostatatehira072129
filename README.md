@@ -6,57 +6,43 @@ O foco deste projeto é **simplicidade de execução** aliada a uma **arquitetur
 
 ---
 
-## 🚀 Como Executar (Guia Passo-a-Passo)
+## 🚀 Guia de Instalação e Execução
 
-Preparamos instaladores automáticos para facilitar sua vida. Escolha seu sistema operacional abaixo:
+Para garantir uma experiência limpa e livre de configurações complexas, utilize nossos scripts oficiais de inicialização.
 
-### 🪟 Windows
+### 🪟 Windows (Recomendado)
 
-#### Opção 1: Instalação Automática (Recomendada)
-Ideal para quem quer praticidade. O script verificará se você tem o Docker instalado e configurará tudo sozinho.
+Utilize o inicializador oficial. Ele detecta se você possui as dependências (Docker) e as instala automaticamente se necessário.
 
-1. Abra a pasta do projeto.
-2. Dê dois cliques no arquivo **`Instalar.bat`**.
-3. Se solicitado, aceite a permissão de Administrador.
-4. Aguarde o processo finalizar. Uma janela preta mostrará o progresso.
-5. Ao final, o navegador abrirá automaticamente com o sistema pronto.
+1.  Abra a pasta do projeto.
+2.  Execute o arquivo:
+    > **`Iniciar-MusicManager.bat`**
+3.  Uma janela segura de instalação será aberta. A primeira execução pode levar alguns minutos para configurar o ambiente.
+4.  O sistema abrirá automaticamente no seu navegador quando estiver pronto.
 
-> **Nota:** Se você não tiver o Docker instalado, o script perguntará se deseja instalar. Digite `S` e enter.
+### 🐧 Linux (Recomendado)
 
-#### Opção 2: Instalação Manual
-Caso prefira fazer do seu jeito:
-
-1. Baixe e instale o [Docker Desktop para Windows](https://www.docker.com/products/docker-desktop).
-2. Abra o Docker Desktop e espere ele iniciar.
-3. Abra o terminal (PowerShell ou CMD) na pasta do projeto.
-4. Execute:
-   ```powershell
-   docker compose up -d --build
-   ```
-5. Acesse: `http://localhost:8080/swagger-ui.html`
+1.  No terminal, dentro da pasta do projeto, dê permissão de execução:
+    ```bash
+    chmod +x Iniciar-MusicManager.sh
+    ```
+2.  Execute o script:
+    ```bash
+    ./Iniciar-MusicManager.sh
+    ```
 
 ---
 
-### 🐧 Linux
+### ⚙️ Execução Manual (Avançado)
+Caso prefira gerenciar o ambiente Docker manualmente:
 
-#### Opção 1: Instalação Automática (Recomendada)
-1. Abra o terminal na pasta do projeto.
-2. Dê permissão de execução ao script:
-   ```bash
-   chmod +x install.sh
-   ```
-3. Execute o instalador:
-   ```bash
-   ./install.sh
-   ```
-4. O script verificará o Docker e subirá o sistema.
-
-#### Opção 2: Instalação Manual
-1. Certifique-se de ter o Docker e o Docker Compose instalados na sua distribuição.
-2. Execute no terminal:
-   ```bash
-   docker compose up -d --build
-   ```
+1.  Certifique-se de ter o **Docker** e **Docker Compose** instalados e rodando.
+2.  No terminal, execute:
+    ```bash
+    docker compose up -d --build
+    ```
+3.  Aguarde os logs de inicialização e acesse:
+    👉 **[http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)**
 
 ---
 
@@ -66,10 +52,6 @@ Caso prefira fazer do seu jeito:
 - **MinIO**: Armazenamento de imagens (compatível com S3).
 - **Docker**: Para garantir que funcione em qualquer máquina.
 - **Flyway**: Migrações de banco de dados seguras.
-
-## 📚 Documentação (API)
-Após iniciar, a documentação completa dos endpoints estará disponível em:
-👉 **[http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)**
 
 ## 👤 Login Padrão
 Para testar os endpoints protegidos:
