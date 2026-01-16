@@ -18,24 +18,22 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
-@Tag(name = "Authentication", description = "Endpoints for Login and Token Refresh")
+@Tag(name = "Autenticação", description = "Endpoints para Login e atualização de Token")
 public class AuthController {
 
     private final AuthService authService;
 
-    @Operation(summary = "Authenticate user", description = "Returns Access and Refresh tokens")
+    @Operation(summary = "Autenticar usuário", description = "Retorna tokens de Acesso e Refresh")
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(
-            @Valid @RequestBody AuthRequest request
-    ) {
+            @Valid @RequestBody AuthRequest request) {
         return ResponseEntity.ok(authService.authenticate(request));
     }
 
-    @Operation(summary = "Refresh Access Token", description = "Uses Refresh Token to get a new Access Token")
+    @Operation(summary = "Atualizar Token de Acesso", description = "Usa o Refresh Token para obter um novo Token de Acesso")
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refresh(
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader
-    ) {
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.badRequest().build();
         }

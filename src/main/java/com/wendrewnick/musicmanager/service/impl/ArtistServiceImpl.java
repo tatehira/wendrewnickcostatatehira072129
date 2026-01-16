@@ -52,14 +52,14 @@ public class ArtistServiceImpl implements ArtistService {
     @Override
     public void delete(UUID id) {
         if (!artistRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Artist not found with id: " + id);
+            throw new ResourceNotFoundException("Artista não encontrado com o ID: " + id);
         }
         artistRepository.deleteById(id);
     }
 
     private Artist getEntityById(UUID id) {
         return artistRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Artist not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Artista não encontrado com o ID: " + id));
     }
 
     private ArtistDTO toDTO(Artist artist) {

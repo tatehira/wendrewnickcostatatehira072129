@@ -53,6 +53,6 @@ public class AuthServiceImpl implements AuthService {
                         .build();
             }
         }
-        throw new RuntimeException("Invalid refresh token");
+        throw new RuntimeException("Refresh token inválido");
     }
 }

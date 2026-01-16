@@ -47,7 +47,7 @@ public class AlbumServiceImpl implements AlbumService {
     @Override
     public AlbumDTO create(AlbumDTO albumDTO, MultipartFile image) {
         Artist artist = artistRepository.findById(albumDTO.getArtistId())
-                .orElseThrow(() -> new ResourceNotFoundException("Artist not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Artista não encontrado"));
 
         String coverKey = null;
         if (image != null && !image.isEmpty()) {
@@ -68,14 +68,14 @@ public class AlbumServiceImpl implements AlbumService {
     @Override
     public void delete(UUID id) {
         if (!albumRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Album not found with id: " + id);
+            throw new ResourceNotFoundException("Álbum não encontrado com o ID: " + id);
         }
         albumRepository.deleteById(id);
     }
 
     private Album getEntityById(UUID id) {
         return albumRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Album not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Álbum não encontrado com o ID: " + id));
     }
 
     private AlbumDTO toDTO(Album album) {
