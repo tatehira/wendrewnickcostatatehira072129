@@ -2,6 +2,7 @@ package com.wendrewnick.musicmanager.service.impl;
 
 import com.wendrewnick.musicmanager.dto.AlbumDTO;
 import com.wendrewnick.musicmanager.entity.Album;
+import com.wendrewnick.musicmanager.exception.BusinessException;
 import com.wendrewnick.musicmanager.entity.Artist;
 import com.wendrewnick.musicmanager.exception.ResourceNotFoundException;
 import com.wendrewnick.musicmanager.repository.AlbumRepository;
@@ -51,6 +52,12 @@ public class AlbumServiceImpl implements AlbumService {
 
         String coverKey = null;
         if (image != null && !image.isEmpty()) {
+            if (image.getContentType() == null || !image.getContentType().startsWith("image/")) {
+                throw new BusinessException("O arquivo deve ser uma imagem válida (PNG, JPG, etc).");
+            }
+            if (image.getSize() > 5 * 1024 * 1024) { // 5MB
+                throw new BusinessException("A imagem não pode exceder 5MB.");
+            }
             coverKey = minioService.uploadFile(image);
         }
 

@@ -11,4 +11,6 @@ import java.util.UUID;
 @Repository
 public interface ArtistRepository extends JpaRepository<Artist, UUID> {
     Page<Artist> findByNameContainingIgnoreCase(String name, Pageable pageable);
+
+    boolean existsByNameIgnoreCase(String name);
 }

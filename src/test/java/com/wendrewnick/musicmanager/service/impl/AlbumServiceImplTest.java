@@ -3,6 +3,7 @@ package com.wendrewnick.musicmanager.service.impl;
 import com.wendrewnick.musicmanager.dto.AlbumDTO;
 import com.wendrewnick.musicmanager.entity.Album;
 import com.wendrewnick.musicmanager.entity.Artist;
+import com.wendrewnick.musicmanager.exception.BusinessException;
 import com.wendrewnick.musicmanager.exception.ResourceNotFoundException;
 import com.wendrewnick.musicmanager.repository.AlbumRepository;
 import com.wendrewnick.musicmanager.repository.ArtistRepository;
@@ -61,6 +62,8 @@ class AlbumServiceImplTest {
 
         when(artistRepository.findById(artistId)).thenReturn(Optional.of(artist));
         when(image.isEmpty()).thenReturn(false);
+        when(image.getContentType()).thenReturn("image/jpeg");
+        when(image.getSize()).thenReturn(1024L);
         when(minioService.uploadFile(image)).thenReturn("cover-key");
         when(albumRepository.save(any(Album.class))).thenReturn(savedAlbum);
 
@@ -70,6 +73,37 @@ class AlbumServiceImplTest {
         assertEquals("Album Title", result.getTitle());
         verify(minioService).uploadFile(image);
         verify(albumRepository).save(any(Album.class));
+    }
+
+    @Test
+    void create_ShouldThrowException_WhenImageContentTypeInvalid() {
+        UUID artistId = UUID.randomUUID();
+        Artist artist = Artist.builder().id(artistId).build();
+        AlbumDTO inputDTO = AlbumDTO.builder().artistId(artistId).build();
+
+        MultipartFile image = mock(MultipartFile.class);
+
+        when(artistRepository.findById(artistId)).thenReturn(Optional.of(artist));
+        when(image.isEmpty()).thenReturn(false);
+        when(image.getContentType()).thenReturn("application/pdf");
+
+        assertThrows(BusinessException.class, () -> albumService.create(inputDTO, image));
+    }
+
+    @Test
+    void create_ShouldThrowException_WhenImageSizeTooLarge() {
+        UUID artistId = UUID.randomUUID();
+        Artist artist = Artist.builder().id(artistId).build();
+        AlbumDTO inputDTO = AlbumDTO.builder().artistId(artistId).build();
+
+        MultipartFile image = mock(MultipartFile.class);
+
+        when(artistRepository.findById(artistId)).thenReturn(Optional.of(artist));
+        when(image.isEmpty()).thenReturn(false);
+        when(image.getContentType()).thenReturn("image/png");
+        when(image.getSize()).thenReturn(10 * 1024 * 1024L); // 10MB
+
+        assertThrows(BusinessException.class, () -> albumService.create(inputDTO, image));
     }
 
     @Test

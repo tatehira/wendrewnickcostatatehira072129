@@ -2,6 +2,7 @@ package com.wendrewnick.musicmanager.service.impl;
 
 import com.wendrewnick.musicmanager.dto.ArtistDTO;
 import com.wendrewnick.musicmanager.entity.Artist;
+import com.wendrewnick.musicmanager.exception.BusinessException;
 import com.wendrewnick.musicmanager.exception.ResourceNotFoundException;
 import com.wendrewnick.musicmanager.repository.ArtistRepository;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,7 @@ class ArtistServiceImplTest {
         ArtistDTO inputDTO = ArtistDTO.builder().name("Pink Floyd").build();
         Artist savedArtist = Artist.builder().id(UUID.randomUUID()).name("Pink Floyd").build();
 
+        when(artistRepository.existsByNameIgnoreCase("Pink Floyd")).thenReturn(false);
         when(artistRepository.save(any(Artist.class))).thenReturn(savedArtist);
 
         ArtistDTO result = artistService.create(inputDTO);
@@ -43,6 +45,16 @@ class ArtistServiceImplTest {
         assertEquals(savedArtist.getId(), result.getId());
         assertEquals("Pink Floyd", result.getName());
         verify(artistRepository).save(any(Artist.class));
+    }
+
+    @Test
+    void create_ShouldThrowException_WhenNameExists() {
+        ArtistDTO inputDTO = ArtistDTO.builder().name("Pink Floyd").build();
+
+        when(artistRepository.existsByNameIgnoreCase("Pink Floyd")).thenReturn(true);
+
+        assertThrows(BusinessException.class, () -> artistService.create(inputDTO));
+        verify(artistRepository, never()).save(any());
     }
 
     @Test

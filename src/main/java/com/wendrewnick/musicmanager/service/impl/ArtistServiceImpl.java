@@ -2,6 +2,7 @@ package com.wendrewnick.musicmanager.service.impl;
 
 import com.wendrewnick.musicmanager.dto.ArtistDTO;
 import com.wendrewnick.musicmanager.entity.Artist;
+import com.wendrewnick.musicmanager.exception.BusinessException;
 import com.wendrewnick.musicmanager.exception.ResourceNotFoundException;
 import com.wendrewnick.musicmanager.repository.ArtistRepository;
 import com.wendrewnick.musicmanager.service.ArtistService;
@@ -36,6 +37,9 @@ public class ArtistServiceImpl implements ArtistService {
 
     @Override
     public ArtistDTO create(ArtistDTO artistDTO) {
+        if (artistRepository.existsByNameIgnoreCase(artistDTO.getName())) {
+            throw new BusinessException("Já existe um artista cadastrado com este nome: " + artistDTO.getName());
+        }
         Artist artist = Artist.builder()
                 .name(artistDTO.getName())
                 .build();
@@ -45,6 +49,12 @@ public class ArtistServiceImpl implements ArtistService {
     @Override
     public ArtistDTO update(UUID id, ArtistDTO artistDTO) {
         Artist artist = getEntityById(id);
+
+        if (!artist.getName().equalsIgnoreCase(artistDTO.getName()) &&
+                artistRepository.existsByNameIgnoreCase(artistDTO.getName())) {
+            throw new BusinessException("Já existe um artista cadastrado com este nome: " + artistDTO.getName());
+        }
+
         artist.setName(artistDTO.getName());
         return toDTO(artistRepository.save(artist));
     }
