@@ -1,4 +1,4 @@
-# 🎵 Music Manager API
+# Music Manager API
 
 > **API REST Profissional para Gerenciamento de Artistas e Álbuns**
 > 
@@ -6,23 +6,23 @@
 
 ---
 
-## 📌 Visão Geral
+## Visão Geral
 
 Este projeto é uma **API RESTful** desenvolvida em **Java + Spring Boot** para resolver o desafio de gerenciamento de catálogo musical. 
 Ele implementa padrões de mercado para garantir escalabilidade, segurança e manutenibilidade, servindo como uma base sólida para sistemas corporativos.
 
 **Principais Funcionalidades:**
-- ✅ **CRUD Completo** de Artistas e Álbuns.
-- 🔐 **Autenticação JWT** (Access + Refresh Token) com Spring Security.
-- 🛡️ **Rate Limiting** para proteção contra ataques de força bruta.
-- 🖼️ **Upload de Imagens** integrado com MinIO (Compatível com AWS S3).
-- 🐳 **Dockerizado** para execução agnóstica de ambiente.
-- 📄 **Documentação Viva** com Swagger/OpenAPI.
-- 🌍 **Internacionalização (i18n)** completa em Português (PT-BR).
+-  **CRUD Completo** de Artistas e Álbuns.
+-  **Autenticação JWT** (Access + Refresh Token) com Spring Security.
+-  **Rate Limiting** para proteção contra ataques de força bruta.
+-  **Upload de Imagens** integrado com MinIO (Compatível com AWS S3).
+-  **Dockerizado** para execução agnóstica de ambiente.
+-  **Documentação Viva** com Swagger/OpenAPI.
+-  **Internacionalização (i18n)** completa em Português (PT-BR).
 
 ---
 
-## 🏗️ Arquitetura e Design
+##  Arquitetura e Design
 
 O projeto segue uma **Arquitetura em Camadas (Layered Architecture)** rigorosa para separar responsabilidades.
 
@@ -35,7 +35,7 @@ graph TD
     Service -.->|File Stream| MinIO[("Object Storage")]
 ```
 
-### 📂 Estrutura de Pastas (ASCII)
+### Estrutura de Pastas (ASCII)
 ```text
 src/main/java/com/wendrewnick/musicmanager
 ├── config/             # Configurações (Swagger, Security, RateLimit)
@@ -50,7 +50,7 @@ src/main/java/com/wendrewnick/musicmanager
 
 ---
 
-## 🛠️ Stack Tecnológica
+## Stack Tecnológica
 
 | Tecnologia | Versão | Função Principal |
 | :--- | :--- | :--- |
@@ -67,13 +67,13 @@ src/main/java/com/wendrewnick/musicmanager
 
 ---
 
-## 🚀 Como Executar (Guia Passo-a-Passo)
+## Como Executar (Guia Passo-a-Passo)
 
 Pré-requisito único: **Docker** instalado e rodando. Nada mais.
 
 Escolha seu sistema operacional e o método de instalação preferido.
 
-### 🪟 Windows
+### Windows
 
 #### Opção A: Instalação Automática (Recomendada)
 O inicializador configura tudo para você.
@@ -86,7 +86,7 @@ O inicializador configura tudo para você.
 docker compose up -d --build
 ```
 
-### 🐧 Linux
+### Linux
 
 #### Opção A: Instalação Automática (Recomendada)
 1. Dê permissão de execução e rode o script:
@@ -100,7 +100,7 @@ docker compose up -d --build
 docker compose up -d --build
 ```
 
-### 🧪 Como Rodar os Testes
+### Como Rodar os Testes
 Para verificar a integridade da aplicação e executar a suíte de testes unitários:
 ```bash
 mvn test
@@ -108,13 +108,13 @@ mvn test
 
 ---
 
-## 📚 Documentação da API
+##  Documentação da API
 
 Após iniciar, acesse a documentação interativa completa (Swagger UI). Nela você pode testar todos os endpoints diretamente pelo navegador.
 
-👉 **URL:** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+-> **URL:** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
 
-### 🔑 Credenciais de Acesso (Seed)
+### Credenciais de Acesso (Seed)
 O sistema cria automaticamente um usuário administrador na primeira execução:
 
 - **Usuário:** `admin`
@@ -124,7 +124,7 @@ O sistema cria automaticamente um usuário administrador na primeira execução:
 
 ---
 
-## ✅ Decisões Técnicas
+## Decisões Técnicas
 
 1.  **JWT com Refresh Token:** Eu decidi implementar um fluxo completo de renovação de token para garantir segurança (tokens de acesso curtos) sem prejudicar a experiência do usuário (login persistente seguro).
 2.  **MinIO para Uploads:** Em vez de salvar imagens no disco do servidor (o que quebraria em ambientes de nuvem efêmeros), eu utilizei um Object Storage compatível com S3. Isso torna a migração para AWS S3 transparente.
