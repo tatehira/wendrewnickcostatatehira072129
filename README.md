@@ -100,6 +100,12 @@ docker compose up -d --build
 docker compose up -d --build
 ```
 
+### 🧪 Como Rodar os Testes
+Para verificar a integridade da aplicação e executar a suíte de testes unitários:
+```bash
+mvn test
+```
+
 ---
 
 ## 📚 Documentação da API
@@ -126,6 +132,7 @@ O sistema cria automaticamente um usuário administrador na primeira execução:
 4.  **Installer Scripts:** Eu criei scripts de inicialização (`.bat`/`.sh`) para abstrair a complexidade do Docker Compose para avaliadores ou usuários menos técnicos.
 5.  **Padronização de API:** Respostas de sucesso seguem um envelope padrão (`ApiResponse`), enquanto erros utilizam o padrão RFC 7807 (`ProblemDetail`) para máxima interoperabilidade.
 6.  **Auditoria Automática:** Todas as entidades possuem rastreamento automático de criação e modificação (`createdAt`, `updatedAt`) via JPA Auditing.
+7.  **Testes Unitários:** A camada de serviço foi coberta com testes unitários usando **JUnit 5** e **Mockito** para garantir a integridade das regras de negócio.
 
 ---
 
