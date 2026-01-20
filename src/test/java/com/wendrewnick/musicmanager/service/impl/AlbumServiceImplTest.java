@@ -18,8 +18,11 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -48,19 +51,19 @@ class AlbumServiceImplTest {
         AlbumDTO inputDTO = AlbumDTO.builder()
                 .title("Album Title")
                 .year(2023)
-                .artistId(artistId)
+                .artistIds(List.of(artistId))
                 .build();
 
         Album savedAlbum = Album.builder()
                 .id(UUID.randomUUID())
                 .title("Album Title")
                 .year(2023)
-                .artist(artist)
+                .artists(Set.of(artist))
                 .build();
 
         MultipartFile image = mock(MultipartFile.class);
 
-        when(artistRepository.findById(artistId)).thenReturn(Optional.of(artist));
+        when(artistRepository.findAllById(any())).thenReturn(List.of(artist));
         when(image.isEmpty()).thenReturn(false);
         when(image.getContentType()).thenReturn("image/jpeg");
         when(image.getSize()).thenReturn(1024L);
@@ -79,11 +82,11 @@ class AlbumServiceImplTest {
     void create_ShouldThrowException_WhenImageContentTypeInvalid() {
         UUID artistId = UUID.randomUUID();
         Artist artist = Artist.builder().id(artistId).build();
-        AlbumDTO inputDTO = AlbumDTO.builder().artistId(artistId).build();
+        AlbumDTO inputDTO = AlbumDTO.builder().artistIds(List.of(artistId)).build();
 
         MultipartFile image = mock(MultipartFile.class);
 
-        when(artistRepository.findById(artistId)).thenReturn(Optional.of(artist));
+        when(artistRepository.findAllById(any())).thenReturn(List.of(artist));
         when(image.isEmpty()).thenReturn(false);
         when(image.getContentType()).thenReturn("application/pdf");
 
@@ -94,11 +97,11 @@ class AlbumServiceImplTest {
     void create_ShouldThrowException_WhenImageSizeTooLarge() {
         UUID artistId = UUID.randomUUID();
         Artist artist = Artist.builder().id(artistId).build();
-        AlbumDTO inputDTO = AlbumDTO.builder().artistId(artistId).build();
+        AlbumDTO inputDTO = AlbumDTO.builder().artistIds(List.of(artistId)).build();
 
         MultipartFile image = mock(MultipartFile.class);
 
-        when(artistRepository.findById(artistId)).thenReturn(Optional.of(artist));
+        when(artistRepository.findAllById(any())).thenReturn(List.of(artist));
         when(image.isEmpty()).thenReturn(false);
         when(image.getContentType()).thenReturn("image/png");
         when(image.getSize()).thenReturn(10 * 1024 * 1024L); // 10MB
@@ -109,9 +112,9 @@ class AlbumServiceImplTest {
     @Test
     void create_ShouldThrowException_WhenArtistNotFound() {
         UUID artistId = UUID.randomUUID();
-        AlbumDTO inputDTO = AlbumDTO.builder().artistId(artistId).build();
+        AlbumDTO inputDTO = AlbumDTO.builder().artistIds(List.of(artistId)).build();
 
-        when(artistRepository.findById(artistId)).thenReturn(Optional.empty());
+        when(artistRepository.findAllById(any())).thenReturn(Collections.emptyList());
 
         assertThrows(ResourceNotFoundException.class, () -> albumService.create(inputDTO, null));
         verify(albumRepository, never()).save(any());
@@ -121,7 +124,12 @@ class AlbumServiceImplTest {
     void findById_ShouldReturnAlbumDTO_WhenFound() {
         UUID id = UUID.randomUUID();
         Artist artist = Artist.builder().id(UUID.randomUUID()).name("Artist").build();
-        Album album = Album.builder().id(id).title("Title").artist(artist).coverUrl("key").build();
+        Album album = Album.builder()
+                .id(id)
+                .title("Title")
+                .artists(Set.of(artist))
+                .coverUrl("key")
+                .build();
 
         when(albumRepository.findById(id)).thenReturn(Optional.of(album));
         when(minioService.getPresignedUrl("key")).thenReturn("http://url");
@@ -137,7 +145,11 @@ class AlbumServiceImplTest {
     void findAll_ShouldReturnPageOfAlbums() {
         Pageable pageable = Pageable.unpaged();
         Artist artist = Artist.builder().id(UUID.randomUUID()).name("Artist").build();
-        Album album = Album.builder().id(UUID.randomUUID()).title("Title").artist(artist).build();
+        Album album = Album.builder()
+                .id(UUID.randomUUID())
+                .title("Title")
+                .artists(Set.of(artist))
+                .build();
 
         when(albumRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(album)));
 
