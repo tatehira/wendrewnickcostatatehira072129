@@ -12,6 +12,7 @@ import com.wendrewnick.musicmanager.service.MinioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,6 +30,7 @@ public class AlbumServiceImpl implements AlbumService {
     private final AlbumRepository albumRepository;
     private final ArtistRepository artistRepository;
     private final MinioService minioService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional(readOnly = true)
     @Override
@@ -77,7 +79,12 @@ public class AlbumServiceImpl implements AlbumService {
                 .coverUrl(coverKey)
                 .build();
 
-        return toDTO(albumRepository.save(album));
+        Album savedAlbum = albumRepository.save(album);
+        AlbumDTO dto = toDTO(savedAlbum);
+
+        messagingTemplate.convertAndSend("/topic/albums", dto);
+
+        return dto;
     }
 
     @Transactional

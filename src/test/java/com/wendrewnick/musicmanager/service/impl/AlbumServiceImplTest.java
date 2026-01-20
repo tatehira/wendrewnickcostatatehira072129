@@ -16,10 +16,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -40,6 +40,9 @@ class AlbumServiceImplTest {
 
     @Mock
     private MinioService minioService;
+
+    @Mock
+    private SimpMessagingTemplate messagingTemplate;
 
     @InjectMocks
     private AlbumServiceImpl albumService;
@@ -76,6 +79,7 @@ class AlbumServiceImplTest {
         assertEquals("Album Title", result.getTitle());
         verify(minioService).uploadFile(image);
         verify(albumRepository).save(any(Album.class));
+        verify(messagingTemplate).convertAndSend(eq("/topic/albums"), any(AlbumDTO.class));
     }
 
     @Test
