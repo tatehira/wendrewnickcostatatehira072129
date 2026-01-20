@@ -52,8 +52,8 @@ public class RateLimitFilter implements Filter {
     private Bucket createNewBucket(String key) {
         // 50 requests per minute to allow Swagger UI to load assets
         Bandwidth limit = Bandwidth.builder()
-                .capacity(50)
-                .refillGreedy(50, Duration.ofMinutes(1))
+                .capacity(10)
+                .refillGreedy(10, Duration.ofMinutes(1))
                 .build();
         return Bucket.builder()
                 .addLimit(limit)
