@@ -1,5 +1,7 @@
 package com.wendrewnick.musicmanager.service;
 
+import com.wendrewnick.musicmanager.service.impl.ArtistServiceImpl;
+
 import com.wendrewnick.musicmanager.dto.ArtistDTO;
 import com.wendrewnick.musicmanager.entity.Artist;
 import com.wendrewnick.musicmanager.repository.ArtistRepository;
@@ -14,6 +16,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -21,18 +25,18 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class ArtistServiceTest {
+class ArtistServiceImplTest {
 
     @Mock
     private ArtistRepository artistRepository;
 
     @InjectMocks
-    private ArtistService artistService;
+    private ArtistServiceImpl artistService;
 
     @Test
     void findAll_ShouldReturnPageOfArtistDTOs() {
         Pageable pageable = PageRequest.of(0, 10);
-        Artist artist = new Artist(UUID.randomUUID(), "Test Artist", Collections.emptyList());
+        Artist artist = Artist.builder().id(UUID.randomUUID()).name("Test Artist").build();
         Page<Artist> page = new PageImpl<>(Collections.singletonList(artist));
 
         when(artistRepository.findAll(pageable)).thenReturn(page);
@@ -47,7 +51,7 @@ class ArtistServiceTest {
     @Test
     void create_ShouldReturnArtistDTO() {
         ArtistDTO input = ArtistDTO.builder().name("New Artist").build();
-        Artist savedArtist = new Artist(UUID.randomUUID(), "New Artist", Collections.emptyList());
+        Artist savedArtist = Artist.builder().id(UUID.randomUUID()).name("New Artist").build();
 
         when(artistRepository.save(any(Artist.class))).thenReturn(savedArtist);
 

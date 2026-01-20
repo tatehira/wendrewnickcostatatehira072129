@@ -10,6 +10,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -29,9 +30,9 @@ public class AlbumDTO {
     @Min(value = 1900, message = "O ano deve ser válido")
     private Integer year;
 
-    @NotNull(message = "Artist ID is required")
-    private UUID artistId;
+    @NotNull(message = "Pelo menos um Artista é obrigatório")
+    private List<UUID> artistIds;
 
-    private String artistName;
+    private List<String> artistNames;
     private String coverUrl;
 }

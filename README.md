@@ -134,6 +134,16 @@ O sistema cria automaticamente um usuário administrador na primeira execução:
 6.  **Auditoria Automática:** Todas as entidades possuem rastreamento automático de criação e modificação (`createdAt`, `updatedAt`) via JPA Auditing.
 7.  **Testes Unitários:** A camada de serviço foi coberta com testes unitários usando **JUnit 5** e **Mockito** para garantir a integridade das regras de negócio.
 
+## Funcionalidades Sênior Implementadas (Edital)
+
+- **Relacionamento N:N:** Refatoração completa para permitir que um álbum tenha múltiplos artistas e vice-versa.
+- **WebSocket:** Notificação em tempo real via STOMP (`/topic/albums`) sempre que um novo álbum é cadastrado.
+- **Integração de Regionais:** Sincronização automática (Scheduled) com API externa, com lógica de criação, inativação e versionamento de registros.
+- **Observabilidade:** Endpoints de Health Check (Liveness e Readiness) expostos via Spring Actuator.
+- **Segurança Refinada:**
+    - Ajuste de **Rate Limit** para 10 requisições/minuto (conforme requisito).
+    - Configuração rigorosa de **CORS** para bloquear domínios externos não autorizados.
+
 ---
 
 <p align="center">

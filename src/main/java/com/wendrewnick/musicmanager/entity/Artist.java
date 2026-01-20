@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Data
@@ -26,6 +26,6 @@ public class Artist extends BaseEntity {
     @Column(nullable = false)
     private String name;
 
-    @OneToMany(mappedBy = "artist", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Album> albums;
+    @ManyToMany(mappedBy = "artists", fetch = FetchType.LAZY)
+    private Set<Album> albums;
 }
