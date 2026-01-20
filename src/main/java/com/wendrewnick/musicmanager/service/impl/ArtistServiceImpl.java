@@ -21,6 +21,13 @@ public class ArtistServiceImpl implements ArtistService {
 
     @Override
     public Page<ArtistDTO> findAll(String name, Pageable pageable) {
+        if (!pageable.getSort().isSorted()) {
+            pageable = org.springframework.data.domain.PageRequest.of(
+                    pageable.getPageNumber(),
+                    pageable.getPageSize(),
+                    org.springframework.data.domain.Sort.by("name").ascending());
+        }
+
         Page<Artist> artists;
         if (name != null && !name.isBlank()) {
             artists = artistRepository.findByNameContainingIgnoreCase(name, pageable);

@@ -6,7 +6,7 @@ CREATE TABLE users (
 
 CREATE TABLE artists (
     id UUID PRIMARY KEY,
-    name VARCHAR(255) NOT NULL
+    name VARCHAR(255) NOT NULL UNIQUE
 );
 
 CREATE TABLE albums (
