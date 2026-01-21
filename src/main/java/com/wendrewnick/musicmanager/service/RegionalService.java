@@ -44,24 +44,22 @@ public class RegionalService {
             Map<Integer, Regional> localMap = localActiveList.stream()
                     .collect(Collectors.toMap(Regional::getRegionalId, Function.identity()));
 
-            // 1. Processar novos e alterações
             for (RegionalExternalDTO remote : remoteList) {
                 Regional local = localMap.get(remote.id());
                 if (local == null) {
-                    // Novo -> Inserir
+
                     createRegional(remote);
                 } else if (!local.getNome().equals(remote.nome())) {
-                    // Alterado -> Inativar antigo e criar novo
+
                     local.setAtivo(false);
                     regionalRepository.save(local);
                     createRegional(remote);
                 }
             }
 
-            // 2. Processar ausentes (estão no localMap mas não no remoteMap)
             for (Regional local : localActiveList) {
                 if (!remoteMap.containsKey(local.getRegionalId())) {
-                    // Ausente -> Inativar
+
                     local.setAtivo(false);
                     regionalRepository.save(local);
                 }

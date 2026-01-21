@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -29,12 +30,13 @@ public class AlbumController {
 
     private final AlbumService albumService;
 
-    @Operation(summary = "Listar todos os álbuns", description = "Suporta paginação e filtro por título")
+    @Operation(summary = "Listar todos os álbuns", description = "Suporta paginação e filtro por título ou nome do artista")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<AlbumDTO>>> getAllAlbums(
             @RequestParam(required = false) String title,
+            @RequestParam(required = false) String artistName,
             Pageable pageable) {
-        Page<AlbumDTO> page = albumService.findAll(title, pageable);
+        Page<AlbumDTO> page = albumService.findAll(title, artistName, pageable);
         return ResponseEntity.ok(ApiResponse.success(page, "Álbuns recuperados com sucesso"));
     }
 
@@ -45,12 +47,12 @@ public class AlbumController {
         return ResponseEntity.ok(ApiResponse.success(dto, "Álbum encontrado"));
     }
 
-    @Operation(summary = "Criar um novo álbum", description = "Upload de imagem e dados")
+    @Operation(summary = "Criar um novo álbum", description = "Upload de múltiplas imagens e dados")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<AlbumDTO>> createAlbum(
             @Parameter(description = "Dados do álbum", content = @Content(mediaType = "application/json")) @RequestPart("data") @Valid AlbumDTO albumDTO,
-            @RequestPart(value = "image", required = false) MultipartFile image) {
-        AlbumDTO created = albumService.create(albumDTO, image);
+            @RequestPart(value = "images", required = false) List<MultipartFile> images) {
+        AlbumDTO created = albumService.create(albumDTO, images);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(created, "Álbum criado com sucesso"));
     }

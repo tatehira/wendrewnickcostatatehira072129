@@ -62,6 +62,7 @@ class AlbumServiceImplTest {
                 .title("Album Title")
                 .year(2023)
                 .artists(Set.of(artist))
+                .images(Set.of("cover-key"))
                 .build();
 
         MultipartFile image = mock(MultipartFile.class);
@@ -73,7 +74,7 @@ class AlbumServiceImplTest {
         when(minioService.uploadFile(image)).thenReturn("cover-key");
         when(albumRepository.save(any(Album.class))).thenReturn(savedAlbum);
 
-        AlbumDTO result = albumService.create(inputDTO, image);
+        AlbumDTO result = albumService.create(inputDTO, List.of(image));
 
         assertNotNull(result);
         assertEquals("Album Title", result.getTitle());
@@ -91,10 +92,10 @@ class AlbumServiceImplTest {
         MultipartFile image = mock(MultipartFile.class);
 
         when(artistRepository.findAllById(any())).thenReturn(List.of(artist));
-        when(image.isEmpty()).thenReturn(false);
         when(image.getContentType()).thenReturn("application/pdf");
 
-        assertThrows(BusinessException.class, () -> albumService.create(inputDTO, image));
+        List<MultipartFile> images = List.of(image);
+        assertThrows(BusinessException.class, () -> albumService.create(inputDTO, images));
     }
 
     @Test
@@ -106,11 +107,11 @@ class AlbumServiceImplTest {
         MultipartFile image = mock(MultipartFile.class);
 
         when(artistRepository.findAllById(any())).thenReturn(List.of(artist));
-        when(image.isEmpty()).thenReturn(false);
         when(image.getContentType()).thenReturn("image/png");
         when(image.getSize()).thenReturn(10 * 1024 * 1024L); // 10MB
 
-        assertThrows(BusinessException.class, () -> albumService.create(inputDTO, image));
+        List<MultipartFile> images = List.of(image);
+        assertThrows(BusinessException.class, () -> albumService.create(inputDTO, images));
     }
 
     @Test
@@ -132,7 +133,7 @@ class AlbumServiceImplTest {
                 .id(id)
                 .title("Title")
                 .artists(Set.of(artist))
-                .coverUrl("key")
+                .images(Set.of("key"))
                 .build();
 
         when(albumRepository.findById(id)).thenReturn(Optional.of(album));
@@ -142,7 +143,7 @@ class AlbumServiceImplTest {
 
         assertNotNull(result);
         assertEquals("Title", result.getTitle());
-        assertEquals("http://url", result.getCoverUrl());
+        assertTrue(result.getCoverUrls().contains("http://url"));
     }
 
     @Test
@@ -157,7 +158,7 @@ class AlbumServiceImplTest {
 
         when(albumRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(album)));
 
-        Page<AlbumDTO> result = albumService.findAll(null, pageable);
+        Page<AlbumDTO> result = albumService.findAll(null, null, pageable);
 
         assertEquals(1, result.getSize());
     }
