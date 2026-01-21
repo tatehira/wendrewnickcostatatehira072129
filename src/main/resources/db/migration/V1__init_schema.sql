@@ -24,6 +24,14 @@ CREATE TABLE album_artists (
     FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE CASCADE
 );
 
+CREATE TABLE regionais (
+    id UUID PRIMARY KEY,
+    regional_id INTEGER,
+    nome VARCHAR(255),
+    ativo BOOLEAN NOT NULL DEFAULT true
+);
+
 -- Default Admin User (password: admin)
 INSERT INTO users (id, username, password) VALUES 
 ('c0656a27-0235-4349-8d60-00918019c384', 'admin', '$2a$10$N.zmdr9k7uOCQb376NoUnutj8iAt6.VwUEM17r78/91phnD.Himr6');
+
