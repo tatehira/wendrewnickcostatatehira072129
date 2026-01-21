@@ -29,8 +29,10 @@ public class Album extends BaseEntity {
     @Column(name = "release_year")
     private Integer year;
 
-    @Column(name = "cover_url")
-    private String coverUrl;
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "album_images", joinColumns = @JoinColumn(name = "album_id"))
+    @Column(name = "image_key")
+    private Set<String> images;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "album_artists", joinColumns = @JoinColumn(name = "album_id"), inverseJoinColumns = @JoinColumn(name = "artist_id"))
