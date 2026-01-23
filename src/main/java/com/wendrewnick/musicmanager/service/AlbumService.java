@@ -15,5 +15,11 @@ public interface AlbumService {
 
     AlbumDTO create(AlbumDTO albumDTO, List<MultipartFile> images);
 
+    AlbumDTO update(UUID id, AlbumDTO albumDTO);
+
+    void addCovers(UUID id, List<MultipartFile> images);
+
+    List<com.wendrewnick.musicmanager.dto.AlbumCoverDTO> getCovers(UUID id);
+
     void delete(UUID id);
 }

@@ -33,7 +33,7 @@ public class AuthController {
     @Operation(summary = "Atualizar Token de Acesso", description = "Usa o Refresh Token para obter um novo Token de Acesso")
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refresh(
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "Bearer <Refresh Token>", required = true, example = "Bearer eyJhbGciOiJIUzI1NiJ9...") @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.badRequest().build();
         }
