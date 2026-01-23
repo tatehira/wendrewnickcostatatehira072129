@@ -38,7 +38,7 @@ class ArtistServiceImplTest {
         Artist artist = Artist.builder().id(UUID.randomUUID()).name("Test Artist").build();
         Page<Artist> page = new PageImpl<>(Collections.singletonList(artist));
 
-        when(artistRepository.findAll(pageable)).thenReturn(page);
+        when(artistRepository.findAll(any(Pageable.class))).thenReturn(page);
 
         Page<ArtistDTO> result = artistService.findAll(null, pageable);
 

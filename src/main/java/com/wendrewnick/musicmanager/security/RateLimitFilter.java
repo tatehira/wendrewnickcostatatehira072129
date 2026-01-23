@@ -36,9 +36,9 @@ public class RateLimitFilter implements Filter {
             return;
         }
 
-        String ip = request.getRemoteAddr();
+        String key = resolveKey(request);
 
-        Bucket bucket = cache.computeIfAbsent(ip, this::createNewBucket);
+        Bucket bucket = cache.computeIfAbsent(key, this::createNewBucket);
 
         if (bucket.tryConsume(1)) {
             filterChain.doFilter(servletRequest, servletResponse);
@@ -57,5 +57,17 @@ public class RateLimitFilter implements Filter {
         return Bucket.builder()
                 .addLimit(limit)
                 .build();
+    }
+
+    private String resolveKey(HttpServletRequest request) {
+        if (org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication() != null
+                && org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication()
+                        .isAuthenticated()
+                && !"anonymousUser".equals(org.springframework.security.core.context.SecurityContextHolder.getContext()
+                        .getAuthentication().getPrincipal())) {
+            return org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication()
+                    .getName();
+        }
+        return request.getRemoteAddr();
     }
 }
