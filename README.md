@@ -74,28 +74,11 @@ Pré-requisito único: **Docker** instalado e rodando. Nada mais.
 Escolha seu sistema operacional e o método de instalação preferido.
 
 ### Windows
-
-#### Opção A: Instalação Automática (Recomendada)
-O inicializador configura tudo para você.
-1. Abra a pasta do projeto.
-2. Execute o arquivo: **`Iniciar-MusicManager.bat`**
-3. Aguarde a mensagem de sucesso e o navegador abrirá automaticamente.
-
-#### Opção B: Instalação Manual
 ```powershell
 docker compose up -d --build
 ```
 
 ### Linux
-
-#### Opção A: Instalação Automática (Recomendada)
-1. Dê permissão de execução e rode o script:
-   ```bash
-   chmod +x Iniciar-MusicManager.sh
-   ./Iniciar-MusicManager.sh
-   ```
-
-#### Opção B: Instalação Manual
 ```bash
 docker compose up -d --build
 ```
@@ -129,10 +112,9 @@ O sistema cria automaticamente um usuário administrador na primeira execução:
 1.  **JWT com Refresh Token:** Eu decidi implementar um fluxo completo de renovação de token para garantir segurança (tokens de acesso curtos) sem prejudicar a experiência do usuário (login persistente seguro).
 2.  **MinIO para Uploads:** Em vez de salvar imagens no disco do servidor (o que quebraria em ambientes de nuvem efêmeros), eu utilizei um Object Storage compatível com S3. Isso torna a migração para AWS S3 transparente.
 3.  **Rate Limiting:** Eu implementei um filtro de Servlet (Bucket4j) para proteger a API de abusos, garantindo disponibilidade mesmo sob carga.
-4.  **Installer Scripts:** Eu criei scripts de inicialização (`.bat`/`.sh`) para abstrair a complexidade do Docker Compose para avaliadores ou usuários menos técnicos.
-5.  **Padronização de API:** Respostas de sucesso seguem um envelope padrão (`ApiResponse`), enquanto erros utilizam o padrão RFC 7807 (`ProblemDetail`) para máxima interoperabilidade.
-6.  **Auditoria Automática:** Todas as entidades possuem rastreamento automático de criação e modificação (`createdAt`, `updatedAt`) via JPA Auditing.
-7.  **Testes Unitários:** A camada de serviço foi coberta com testes unitários usando **JUnit 5** e **Mockito** para garantir a integridade das regras de negócio.
+4.  **Padronização de API:** Respostas de sucesso seguem um envelope padrão (`ApiResponse`), enquanto erros utilizam o padrão RFC 7807 (`ProblemDetail`) para máxima interoperabilidade.
+5.  **Auditoria Automática:** Todas as entidades possuem rastreamento automático de criação e modificação (`createdAt`, `updatedAt`) via JPA Auditing.
+6.  **Testes Unitários:** A camada de serviço foi coberta com testes unitários usando **JUnit 5** e **Mockito** para garantir a integridade das regras de negócio.
 
 ## Funcionalidades Sênior Implementadas (Edital)
 
