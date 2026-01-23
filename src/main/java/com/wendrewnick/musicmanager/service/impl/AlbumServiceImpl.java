@@ -94,6 +94,65 @@ public class AlbumServiceImpl implements AlbumService {
 
     @Transactional
     @Override
+    public AlbumDTO update(UUID id, AlbumDTO albumDTO) {
+        Album album = getEntityById(id);
+
+        album.setTitle(albumDTO.getTitle());
+        album.setYear(albumDTO.getYear());
+
+        if (albumDTO.getArtistIds() != null && !albumDTO.getArtistIds().isEmpty()) {
+            List<Artist> artistList = artistRepository.findAllById(albumDTO.getArtistIds());
+            if (artistList.isEmpty()) {
+                throw new ResourceNotFoundException("Nenhum artista encontrado com os IDs fornecidos");
+            }
+            album.setArtists(new HashSet<>(artistList));
+        }
+
+        return toDTO(albumRepository.save(album));
+    }
+
+    @Transactional
+    @Override
+    public void addCovers(UUID id, List<MultipartFile> images) {
+        Album album = getEntityById(id);
+
+        if (images == null || images.isEmpty()) {
+            throw new BusinessException("Nenhuma imagem fornecida");
+        }
+
+        if (album.getImages() == null) {
+            album.setImages(new HashSet<>());
+        }
+
+        for (MultipartFile img : images) {
+            if (img.getContentType() == null || !img.getContentType().startsWith("image/")) {
+                throw new BusinessException("Todos os arquivos devem ser imagens válidas (PNG, JPG, etc).");
+            }
+            String key = minioService.uploadFile(img);
+            album.getImages().add(key);
+        }
+
+        albumRepository.save(album);
+    }
+
+    @Override
+    public List<com.wendrewnick.musicmanager.dto.AlbumCoverDTO> getCovers(UUID id) {
+        Album album = getEntityById(id);
+        if (album.getImages() == null || album.getImages().isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+
+        return album.getImages().stream().map(key -> {
+            String url = minioService.getPresignedUrl(key);
+            return com.wendrewnick.musicmanager.dto.AlbumCoverDTO.builder()
+                    .url(url)
+                    .expiresAt(java.time.Instant.now().plus(30, java.time.temporal.ChronoUnit.MINUTES))
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
+    @Transactional
+    @Override
     public void delete(UUID id) {
         if (!albumRepository.existsById(id)) {
             throw new ResourceNotFoundException("Álbum não encontrado com o ID: " + id);
