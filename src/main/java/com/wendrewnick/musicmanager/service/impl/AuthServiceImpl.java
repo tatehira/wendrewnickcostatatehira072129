@@ -39,17 +39,16 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse refreshToken(String refreshToken) {
-        // Basic validation logic
+
         final String username = jwtService.extractUsername(refreshToken);
         if (username != null) {
             var user = userRepository.findByUsername(username).orElseThrow();
             if (jwtService.isTokenValid(refreshToken, user)) {
                 var accessToken = jwtService.generateAccessToken(user);
-                // Ideally, rotate refresh token too, but simple re-issue of access token is
-                // fine for this scope
+
                 return AuthResponse.builder()
                         .accessToken(accessToken)
-                        .refreshToken(refreshToken) // Return same refresh token or new one
+                        .refreshToken(refreshToken)
                         .build();
             }
         }

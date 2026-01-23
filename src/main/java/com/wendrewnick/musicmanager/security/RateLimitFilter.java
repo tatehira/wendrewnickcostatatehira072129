@@ -37,7 +37,6 @@ public class RateLimitFilter implements Filter {
         }
 
         String ip = request.getRemoteAddr();
-        // Simple IP-based rate limiting for now.
 
         Bucket bucket = cache.computeIfAbsent(ip, this::createNewBucket);
 
@@ -50,7 +49,7 @@ public class RateLimitFilter implements Filter {
     }
 
     private Bucket createNewBucket(String key) {
-        // 50 requests per minute to allow Swagger UI to load assets
+
         Bandwidth limit = Bandwidth.builder()
                 .capacity(10)
                 .refillGreedy(10, Duration.ofMinutes(1))

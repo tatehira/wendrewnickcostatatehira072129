@@ -34,5 +34,5 @@ public class AlbumDTO {
     private List<UUID> artistIds;
 
     private List<String> artistNames;
-    private String coverUrl;
+    private List<String> coverUrls;
 }
