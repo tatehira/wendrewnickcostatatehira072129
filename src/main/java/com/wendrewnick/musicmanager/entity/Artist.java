@@ -26,6 +26,9 @@ public class Artist extends BaseEntity {
     @Column(nullable = false)
     private String name;
 
+    @Column(name = "is_band", nullable = false)
+    private boolean band = true;
+
     @ManyToMany(mappedBy = "artists", fetch = FetchType.LAZY)
     private Set<Album> albums;
 }

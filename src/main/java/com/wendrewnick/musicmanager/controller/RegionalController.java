@@ -5,6 +5,7 @@ import com.wendrewnick.musicmanager.dto.RegionalResponseDTO;
 import com.wendrewnick.musicmanager.entity.Regional;
 import com.wendrewnick.musicmanager.service.RegionalService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/v1/regionais")
 @RequiredArgsConstructor
 @Tag(name = "Regionais", description = "Dados sincronizados de API externa")
+@SecurityRequirement(name = "bearerAuth")
 public class RegionalController {
 
     private final RegionalService regionalService;

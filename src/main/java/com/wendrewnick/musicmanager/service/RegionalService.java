@@ -7,7 +7,6 @@ import com.wendrewnick.musicmanager.entity.Regional;
 import com.wendrewnick.musicmanager.repository.RegionalRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,8 +31,7 @@ public class RegionalService {
 
     private static final String API_URL = "https://integrador-argus-api.geia.vip/v1/regionais";
 
-    @EventListener(org.springframework.boot.context.event.ApplicationReadyEvent.class) // Executa ao iniciar
-    @Scheduled(fixedRate = 60000) // Executa a cada 1 minuto
+    @Scheduled(fixedRate = 60000)
     @Transactional
     public void syncRegionals() {
         log.info("Iniciando sincronização de regionais...");

@@ -25,11 +25,11 @@ public class ArtistController {
 
     private final ArtistService artistService;
 
-    @Operation(summary = "Listar todos os artistas", description = "Suporta paginação e filtro por nome")
+    @Operation(summary = "Listar artistas", description = "Paginação e filtro por nome. Ordenação alfabética: ?sort=name,asc ou ?sort=name,desc (default: name,asc).")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<ArtistDTO>>> getAllArtists(
             @RequestParam(required = false) String name,
-            Pageable pageable) {
+            @org.springframework.data.web.PageableDefault(sort = "name", direction = org.springframework.data.domain.Sort.Direction.ASC) Pageable pageable) {
         Page<ArtistDTO> page = artistService.findAll(name, pageable);
         return ResponseEntity.ok(ApiResponse.success(page, "Artistas recuperados com sucesso"));
     }

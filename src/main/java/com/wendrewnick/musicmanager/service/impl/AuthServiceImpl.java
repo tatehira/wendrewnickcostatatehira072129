@@ -2,6 +2,7 @@ package com.wendrewnick.musicmanager.service.impl;
 
 import com.wendrewnick.musicmanager.dto.AuthRequest;
 import com.wendrewnick.musicmanager.dto.AuthResponse;
+import com.wendrewnick.musicmanager.exception.InvalidRefreshTokenException;
 import com.wendrewnick.musicmanager.repository.UserRepository;
 import com.wendrewnick.musicmanager.security.JwtService;
 import com.wendrewnick.musicmanager.service.AuthService;
@@ -42,8 +43,8 @@ public class AuthServiceImpl implements AuthService {
 
         final String username = jwtService.extractUsername(refreshToken);
         if (username != null) {
-            var user = userRepository.findByUsername(username).orElseThrow();
-            if (jwtService.isTokenValid(refreshToken, user)) {
+            var user = userRepository.findByUsername(username).orElse(null);
+            if (user != null && jwtService.isTokenValid(refreshToken, user)) {
                 var accessToken = jwtService.generateAccessToken(user);
 
                 return AuthResponse.builder()
@@ -52,6 +53,6 @@ public class AuthServiceImpl implements AuthService {
                         .build();
             }
         }
-        throw new RuntimeException("Refresh token inválido");
+        throw new InvalidRefreshTokenException("Refresh token inválido ou expirado");
     }
 }
