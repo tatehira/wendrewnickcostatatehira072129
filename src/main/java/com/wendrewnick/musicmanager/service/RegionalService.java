@@ -43,53 +43,53 @@ public class RegionalService {
     @Scheduled(fixedRate = 60000)
     @Transactional
     public void syncRegionals() {
-        log.info("Iniciando sincronização de regionais...");
+        log.info("Sincronizando regionais...");
+        
         try {
-            List<RegionalExternalDTO> remoteList = fetchRegionals();
-            Map<Integer, RegionalExternalDTO> remoteMap = remoteList.stream()
+            List<RegionalExternalDTO> remotos = fetchRegionals();
+            List<Regional> locais = regionalRepository.findByAtivoTrue();
+            
+            Map<Integer, RegionalExternalDTO> mapaRemoto = remotos.stream()
                     .collect(Collectors.toMap(RegionalExternalDTO::id, Function.identity(),
                             (existing, replacement) -> existing));
 
-            List<Regional> localActiveList = regionalRepository.findByAtivoTrue();
-            Map<Integer, Regional> localMap = localActiveList.stream()
+            Map<Integer, Regional> mapaLocal = locais.stream()
                     .collect(Collectors.toMap(Regional::getRegionalId, Function.identity(),
                             (existing, replacement) -> existing));
 
-            for (RegionalExternalDTO remote : remoteList) {
-                Regional local = localMap.get(remote.id());
+            for (RegionalExternalDTO regional : remotos) {
+                Regional local = mapaLocal.get(regional.id());
+                
                 if (local == null) {
-
-                    createRegional(remote);
-                } else if (!local.getNome().equals(remote.nome())) {
-
+                    salvarNovo(regional);
+                } else if (!local.getNome().equals(regional.nome())) {
                     local.setAtivo(false);
                     regionalRepository.save(local);
-                    createRegional(remote);
+                    salvarNovo(regional);
                 }
             }
 
-            for (Regional local : localActiveList) {
-                if (!remoteMap.containsKey(local.getRegionalId())) {
-
+            for (Regional local : locais) {
+                if (!mapaRemoto.containsKey(local.getRegionalId())) {
                     local.setAtivo(false);
                     regionalRepository.save(local);
                 }
             }
-            log.info("Sincronização concluída.");
+            
+            log.info("Sincronização concluída: {} regionais", remotos.size());
 
         } catch (Exception e) {
-            log.error("Erro ao sincronizar regionais: ", e);
+            log.error("Erro ao sincronizar regionais: {}", e.getMessage());
         }
     }
 
-    private void createRegional(RegionalExternalDTO dto) {
-        Regional newRegional = Regional.builder()
+    private void salvarNovo(RegionalExternalDTO dto) {
+        Regional novo = Regional.builder()
                 .regionalId(dto.id())
                 .nome(dto.nome())
                 .ativo(true)
                 .build();
-        regionalRepository.save(newRegional);
-        log.debug("Regional criada/atualizada: {}", dto.nome());
+        regionalRepository.save(novo);
     }
 
     private List<RegionalExternalDTO> fetchRegionals() throws Exception {
@@ -101,11 +101,10 @@ public class RegionalService {
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() != 200) {
-            throw new RuntimeException("Falha na API externa: " + response.statusCode());
+            throw new RuntimeException("API externa retornou status " + response.statusCode());
         }
 
-        return objectMapper.readValue(response.body(), new TypeReference<>() {
-        });
+        return objectMapper.readValue(response.body(), new TypeReference<>() {});
     }
 
     public List<Regional> findAll() {

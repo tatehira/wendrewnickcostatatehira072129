@@ -11,6 +11,7 @@ import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -21,56 +22,48 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class RateLimitFilter implements Filter {
 
-    private final Map<String, Bucket> cache = new ConcurrentHashMap<>();
+    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
+    private static final int LIMITE_POR_MINUTO = 10;
 
     @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
+    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
             throws IOException, ServletException {
-        HttpServletRequest request = (HttpServletRequest) servletRequest;
-        HttpServletResponse response = (HttpServletResponse) servletResponse;
+        
+        HttpServletRequest request = (HttpServletRequest) req;
+        HttpServletResponse response = (HttpServletResponse) res;
 
-        String requestURI = request.getRequestURI();
-        if (requestURI.startsWith("/swagger-ui") || requestURI.startsWith("/v3/api-docs")
-                || requestURI.startsWith("/api-docs")) {
-            filterChain.doFilter(servletRequest, servletResponse);
+        String uri = request.getRequestURI();
+        
+        if (uri.startsWith("/swagger") || uri.contains("api-docs")) {
+            chain.doFilter(req, res);
             return;
         }
 
-        String key = resolveKey(request);
-
-        Bucket bucket = cache.computeIfAbsent(key, this::createNewBucket);
+        String chave = obterChave(request);
+        Bucket bucket = buckets.computeIfAbsent(chave, k -> criarBucket());
 
         if (bucket.tryConsume(1)) {
-            filterChain.doFilter(servletRequest, servletResponse);
+            chain.doFilter(req, res);
         } else {
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
             response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
-            String body = """
-                    {"title":"Rate limit exceeded","detail":"Máximo de 10 requisições por minuto por usuário.","status":429}""";
-            response.getWriter().write(body);
+            response.getWriter().write("{\"title\":\"Rate limit exceeded\",\"detail\":\"Limite de " + LIMITE_POR_MINUTO + " requisições por minuto excedido\",\"status\":429}");
         }
     }
 
-    private Bucket createNewBucket(String key) {
-
-        Bandwidth limit = Bandwidth.builder()
-                .capacity(10)
-                .refillGreedy(10, Duration.ofMinutes(1))
-                .build();
+    private Bucket criarBucket() {
         return Bucket.builder()
-                .addLimit(limit)
+                .addLimit(Bandwidth.builder()
+                        .capacity(LIMITE_POR_MINUTO)
+                        .refillGreedy(LIMITE_POR_MINUTO, Duration.ofMinutes(1))
+                        .build())
                 .build();
     }
 
-    private String resolveKey(HttpServletRequest request) {
-        if (org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication() != null
-                && org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication()
-                        .isAuthenticated()
-                && !"anonymousUser".equals(org.springframework.security.core.context.SecurityContextHolder.getContext()
-                        .getAuthentication().getPrincipal())) {
-            return org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication()
-                    .getName();
+    private String obterChave(HttpServletRequest request) {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+            return auth.getName();
         }
         return request.getRemoteAddr();
     }

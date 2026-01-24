@@ -31,111 +31,116 @@ public class AlbumServiceImpl implements AlbumService {
     private final ArtistRepository artistRepository;
     private final MinioService minioService;
     private final SimpMessagingTemplate messagingTemplate;
+    
+    private static final long TAMANHO_MAX_IMAGEM = 5 * 1024 * 1024; // 5MB
 
     @Transactional(readOnly = true)
     @Override
     public Page<AlbumDTO> findAll(String title, String artistName, Boolean soloOrBand, Pageable pageable) {
-        Page<Album> albums;
+        Page<Album> albuns;
+        
         if (title != null && !title.isBlank()) {
-            albums = albumRepository.findByTitleContainingIgnoreCase(title, pageable);
+            albuns = albumRepository.findByTitleContainingIgnoreCase(title, pageable);
         } else if (artistName != null && !artistName.isBlank()) {
-            albums = albumRepository.findByArtistsNameContainingIgnoreCase(artistName, pageable);
+            albuns = albumRepository.findByArtistsNameContainingIgnoreCase(artistName, pageable);
         } else if (soloOrBand != null) {
-            albums = albumRepository.findByArtistType(soloOrBand, pageable);
+            albuns = albumRepository.findByArtistType(soloOrBand, pageable);
         } else {
-            albums = albumRepository.findAll(pageable);
+            albuns = albumRepository.findAll(pageable);
         }
-        return albums.map(this::toDTO);
+        
+        return albuns.map(this::toDTO);
     }
 
     @Transactional(readOnly = true)
     @Override
     public AlbumDTO findById(UUID id) {
-        return toDTO(getEntityById(id));
+        return toDTO(buscarPorId(id));
     }
 
     @Transactional
     @Override
     public AlbumDTO create(AlbumDTO albumDTO, List<MultipartFile> images) {
-        List<Artist> artistList = artistRepository.findAllById(albumDTO.getArtistIds());
-
-        if (artistList.isEmpty()) {
+        List<Artist> artistas = artistRepository.findAllById(albumDTO.getArtistIds());
+        if (artistas.isEmpty()) {
             throw new ResourceNotFoundException("Nenhum artista encontrado com os IDs fornecidos");
         }
 
-        Set<Artist> artists = new HashSet<>(artistList);
-        Set<String> imageKeys = new HashSet<>();
-
-        if (images != null && !images.isEmpty()) {
-            for (MultipartFile img : images) {
-                if (img.getContentType() == null || !img.getContentType().startsWith("image/")) {
-                    throw new BusinessException("Todos os arquivos devem ser imagens válidas (PNG, JPG, etc).");
-                }
-                if (img.getSize() > 5 * 1024 * 1024) { // 5MB
-                    throw new BusinessException("A imagem " + img.getOriginalFilename() + " excede 5MB.");
-                }
-                String key = minioService.uploadFile(img);
-                imageKeys.add(key);
+        Set<String> chavesImagens = new HashSet<>();
+        if (images != null) {
+            for (MultipartFile imagem : images) {
+                validarImagem(imagem);
+                chavesImagens.add(minioService.uploadFile(imagem));
             }
         }
 
         Album album = Album.builder()
                 .title(albumDTO.getTitle())
                 .year(albumDTO.getYear())
-                .artists(artists)
-                .images(imageKeys)
+                .artists(new HashSet<>(artistas))
+                .images(chavesImagens)
                 .build();
 
-        Album savedAlbum = albumRepository.save(album);
-        AlbumDTO dto = toDTO(savedAlbum);
+        Album salvo = albumRepository.save(album);
+        AlbumDTO dto = toDTO(salvo);
 
         messagingTemplate.convertAndSend("/topic/albums", dto);
 
         return dto;
     }
+    
+    private void validarImagem(MultipartFile imagem) {
+        String tipo = imagem.getContentType();
+        if (tipo == null || !tipo.startsWith("image/")) {
+            throw new BusinessException("Arquivo inválido. Envie uma imagem (PNG, JPG, etc)");
+        }
+        if (imagem.getSize() > TAMANHO_MAX_IMAGEM) {
+            throw new BusinessException("Imagem excede o limite de 5MB: " + imagem.getOriginalFilename());
+        }
+    }
 
     @Transactional
     @Override
     public AlbumDTO update(UUID id, AlbumDTO dto) {
-        Album album = getEntityById(id);
+        Album album = buscarPorId(id);
         album.setTitle(dto.getTitle());
         album.setYear(dto.getYear());
 
         if (dto.getArtistIds() != null && !dto.getArtistIds().isEmpty()) {
-            List<Artist> artists = artistRepository.findAllById(dto.getArtistIds());
-            if (artists.isEmpty()) {
+            List<Artist> artistas = artistRepository.findAllById(dto.getArtistIds());
+            if (artistas.isEmpty()) {
                 throw new ResourceNotFoundException("Nenhum artista encontrado");
             }
-            album.setArtists(new HashSet<>(artists));
+            album.setArtists(new HashSet<>(artistas));
         }
+        
         return toDTO(albumRepository.save(album));
     }
 
     @Transactional
     @Override
     public void addCovers(UUID id, List<MultipartFile> files) {
-        Album album = getEntityById(id);
+        Album album = buscarPorId(id);
+        
         if (files == null || files.isEmpty()) {
             throw new BusinessException("Nenhum arquivo enviado");
         }
+        
         if (album.getImages() == null) {
             album.setImages(new HashSet<>());
         }
-        for (MultipartFile file : files) {
-            if (file.getContentType() == null || !file.getContentType().startsWith("image/")) {
-                throw new BusinessException("Arquivo deve ser uma imagem");
-            }
-            if (file.getSize() > 5 * 1024 * 1024) {
-                throw new BusinessException("Imagem excede 5MB");
-            }
-            album.getImages().add(minioService.uploadFile(file));
+        
+        for (MultipartFile arquivo : files) {
+            validarImagem(arquivo);
+            album.getImages().add(minioService.uploadFile(arquivo));
         }
+        
         albumRepository.save(album);
     }
 
     @Override
     public List<String> getCoverUrls(UUID id) {
-        Album album = getEntityById(id);
+        Album album = buscarPorId(id);
         if (album.getImages() == null || album.getImages().isEmpty()) {
             return List.of();
         }
@@ -148,20 +153,20 @@ public class AlbumServiceImpl implements AlbumService {
     @Override
     public void delete(UUID id) {
         if (!albumRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Álbum não encontrado com o ID: " + id);
+            throw new ResourceNotFoundException("Álbum não encontrado: " + id);
         }
         albumRepository.deleteById(id);
     }
 
-    private Album getEntityById(UUID id) {
+    private Album buscarPorId(UUID id) {
         return albumRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Álbum não encontrado com o ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Álbum não encontrado: " + id));
     }
 
     private AlbumDTO toDTO(Album album) {
-        List<String> presignedUrls = null;
+        List<String> urlsCapas = null;
         if (album.getImages() != null && !album.getImages().isEmpty()) {
-            presignedUrls = album.getImages().stream()
+            urlsCapas = album.getImages().stream()
                     .map(minioService::getPresignedUrl)
                     .collect(Collectors.toList());
         }
@@ -172,7 +177,7 @@ public class AlbumServiceImpl implements AlbumService {
                 .year(album.getYear())
                 .artistIds(album.getArtists().stream().map(Artist::getId).collect(Collectors.toList()))
                 .artistNames(album.getArtists().stream().map(Artist::getName).collect(Collectors.toList()))
-                .coverUrls(presignedUrls)
+                .coverUrls(urlsCapas)
                 .build();
     }
 }

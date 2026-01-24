@@ -26,6 +26,7 @@ public class Artist extends BaseEntity {
     @Column(nullable = false)
     private String name;
 
+    @Builder.Default
     @Column(name = "is_band", nullable = false)
     private boolean band = true;
 

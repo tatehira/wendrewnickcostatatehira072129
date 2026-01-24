@@ -8,7 +8,9 @@ import com.wendrewnick.musicmanager.repository.ArtistRepository;
 import com.wendrewnick.musicmanager.service.ArtistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -22,73 +24,75 @@ public class ArtistServiceImpl implements ArtistService {
     @Override
     public Page<ArtistDTO> findAll(String name, Pageable pageable) {
         if (!pageable.getSort().isSorted()) {
-            pageable = org.springframework.data.domain.PageRequest.of(
-                    pageable.getPageNumber(),
-                    pageable.getPageSize(),
-                    org.springframework.data.domain.Sort.by("name").ascending());
+            pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by("name"));
         }
 
-        Page<Artist> artists;
+        Page<Artist> artistas;
         if (name != null && !name.isBlank()) {
-            artists = artistRepository.findByNameContainingIgnoreCase(name, pageable);
+            artistas = artistRepository.findByNameContainingIgnoreCase(name, pageable);
         } else {
-            artists = artistRepository.findAll(pageable);
+            artistas = artistRepository.findAll(pageable);
         }
-        return artists.map(this::toDTO);
+        
+        return artistas.map(this::toDTO);
     }
 
     @Override
     public ArtistDTO findById(UUID id) {
-        return toDTO(getEntityById(id));
+        return toDTO(buscarPorId(id));
     }
 
     @Override
-    public ArtistDTO create(ArtistDTO artistDTO) {
-        if (artistRepository.existsByNameIgnoreCase(artistDTO.getName())) {
-            throw new BusinessException("Já existe um artista cadastrado com este nome: " + artistDTO.getName());
+    public ArtistDTO create(ArtistDTO dto) {
+        if (artistRepository.existsByNameIgnoreCase(dto.getName())) {
+            throw new BusinessException("Já existe artista com esse nome");
         }
-        boolean isBand = artistDTO.getBand() != null ? artistDTO.getBand() : true;
-        Artist artist = Artist.builder()
-                .name(artistDTO.getName())
-                .band(isBand)
+        
+        boolean ehBanda = dto.getBand() != null ? dto.getBand() : true;
+        
+        Artist artista = Artist.builder()
+                .name(dto.getName())
+                .band(ehBanda)
                 .build();
-        return toDTO(artistRepository.save(artist));
+                
+        return toDTO(artistRepository.save(artista));
     }
 
     @Override
-    public ArtistDTO update(UUID id, ArtistDTO artistDTO) {
-        Artist artist = getEntityById(id);
+    public ArtistDTO update(UUID id, ArtistDTO dto) {
+        Artist artista = buscarPorId(id);
 
-        if (!artist.getName().equalsIgnoreCase(artistDTO.getName()) &&
-                artistRepository.existsByNameIgnoreCase(artistDTO.getName())) {
-            throw new BusinessException("Já existe um artista cadastrado com este nome: " + artistDTO.getName());
+        if (!artista.getName().equalsIgnoreCase(dto.getName()) 
+                && artistRepository.existsByNameIgnoreCase(dto.getName())) {
+            throw new BusinessException("Já existe artista com esse nome");
         }
 
-        artist.setName(artistDTO.getName());
-        if (artistDTO.getBand() != null) {
-            artist.setBand(artistDTO.getBand());
+        artista.setName(dto.getName());
+        if (dto.getBand() != null) {
+            artista.setBand(dto.getBand());
         }
-        return toDTO(artistRepository.save(artist));
+        
+        return toDTO(artistRepository.save(artista));
     }
 
     @Override
     public void delete(UUID id) {
         if (!artistRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Artista não encontrado com o ID: " + id);
+            throw new ResourceNotFoundException("Artista não encontrado: " + id);
         }
         artistRepository.deleteById(id);
     }
 
-    private Artist getEntityById(UUID id) {
+    private Artist buscarPorId(UUID id) {
         return artistRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Artista não encontrado com o ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Artista não encontrado: " + id));
     }
 
-    private ArtistDTO toDTO(Artist artist) {
+    private ArtistDTO toDTO(Artist artista) {
         return ArtistDTO.builder()
-                .id(artist.getId())
-                .name(artist.getName())
-                .band(artist.isBand())
+                .id(artista.getId())
+                .name(artista.getName())
+                .band(artista.isBand())
                 .build();
     }
 }
