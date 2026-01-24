@@ -34,12 +34,14 @@ public class AlbumServiceImpl implements AlbumService {
 
     @Transactional(readOnly = true)
     @Override
-    public Page<AlbumDTO> findAll(String title, String artistName, Pageable pageable) {
+    public Page<AlbumDTO> findAll(String title, String artistName, Boolean soloOrBand, Pageable pageable) {
         Page<Album> albums;
         if (title != null && !title.isBlank()) {
             albums = albumRepository.findByTitleContainingIgnoreCase(title, pageable);
         } else if (artistName != null && !artistName.isBlank()) {
             albums = albumRepository.findByArtistsNameContainingIgnoreCase(artistName, pageable);
+        } else if (soloOrBand != null) {
+            albums = albumRepository.findByArtistType(soloOrBand, pageable);
         } else {
             albums = albumRepository.findAll(pageable);
         }
@@ -127,6 +129,9 @@ public class AlbumServiceImpl implements AlbumService {
         for (MultipartFile img : images) {
             if (img.getContentType() == null || !img.getContentType().startsWith("image/")) {
                 throw new BusinessException("Todos os arquivos devem ser imagens válidas (PNG, JPG, etc).");
+            }
+            if (img.getSize() > 5 * 1024 * 1024) {
+                throw new BusinessException("A imagem " + img.getOriginalFilename() + " excede 5MB.");
             }
             String key = minioService.uploadFile(img);
             album.getImages().add(key);

@@ -44,7 +44,11 @@ public class RateLimitFilter implements Filter {
             filterChain.doFilter(servletRequest, servletResponse);
         } else {
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-            response.getWriter().write("Too many requests");
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            String body = """
+                    {"title":"Rate limit exceeded","detail":"Máximo de 10 requisições por minuto por usuário.","status":429}""";
+            response.getWriter().write(body);
         }
     }
 
