@@ -158,7 +158,7 @@ class AlbumServiceImplTest {
 
         when(albumRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(album)));
 
-        Page<AlbumDTO> result = albumService.findAll(null, null, pageable);
+        Page<AlbumDTO> result = albumService.findAll(null, null, null, pageable);
 
         assertEquals(1, result.getSize());
     }

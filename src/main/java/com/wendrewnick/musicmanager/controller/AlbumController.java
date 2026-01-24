@@ -30,13 +30,14 @@ public class AlbumController {
 
     private final AlbumService albumService;
 
-    @Operation(summary = "Listar todos os álbuns", description = "Suporta paginação e filtro por título ou nome do artista")
+    @Operation(summary = "Listar álbuns", description = "Paginação. Filtros: title, artistName, soloOrBand (true=band, false=solo).")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<AlbumDTO>>> getAllAlbums(
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String artistName,
+            @RequestParam(required = false) Boolean soloOrBand,
             Pageable pageable) {
-        Page<AlbumDTO> page = albumService.findAll(title, artistName, pageable);
+        Page<AlbumDTO> page = albumService.findAll(title, artistName, soloOrBand, pageable);
         return ResponseEntity.ok(ApiResponse.success(page, "Álbuns recuperados com sucesso"));
     }
 

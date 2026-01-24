@@ -47,11 +47,13 @@ public class RegionalService {
         try {
             List<RegionalExternalDTO> remoteList = fetchRegionals();
             Map<Integer, RegionalExternalDTO> remoteMap = remoteList.stream()
-                    .collect(Collectors.toMap(RegionalExternalDTO::id, Function.identity()));
+                    .collect(Collectors.toMap(RegionalExternalDTO::id, Function.identity(),
+                            (existing, replacement) -> existing));
 
             List<Regional> localActiveList = regionalRepository.findByAtivoTrue();
             Map<Integer, Regional> localMap = localActiveList.stream()
-                    .collect(Collectors.toMap(Regional::getRegionalId, Function.identity()));
+                    .collect(Collectors.toMap(Regional::getRegionalId, Function.identity(),
+                            (existing, replacement) -> existing));
 
             for (RegionalExternalDTO remote : remoteList) {
                 Regional local = localMap.get(remote.id());

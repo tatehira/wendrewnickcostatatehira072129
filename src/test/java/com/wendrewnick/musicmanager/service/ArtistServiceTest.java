@@ -50,8 +50,9 @@ class ArtistServiceImplTest {
     @Test
     void create_ShouldReturnArtistDTO() {
         ArtistDTO input = ArtistDTO.builder().name("New Artist").build();
-        Artist savedArtist = Artist.builder().id(UUID.randomUUID()).name("New Artist").build();
+        Artist savedArtist = Artist.builder().id(UUID.randomUUID()).name("New Artist").band(true).build();
 
+        when(artistRepository.existsByNameIgnoreCase("New Artist")).thenReturn(false);
         when(artistRepository.save(any(Artist.class))).thenReturn(savedArtist);
 
         ArtistDTO result = artistService.create(input);

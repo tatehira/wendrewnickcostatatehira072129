@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface AlbumService {
-    Page<AlbumDTO> findAll(String title, String artistName, Pageable pageable);
+    Page<AlbumDTO> findAll(String title, String artistName, Boolean soloOrBand, Pageable pageable);
 
     AlbumDTO findById(UUID id);
 

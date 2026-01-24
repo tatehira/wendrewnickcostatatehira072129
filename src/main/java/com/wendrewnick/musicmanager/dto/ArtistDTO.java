@@ -20,4 +20,6 @@ public class ArtistDTO {
     @NotBlank(message = "O nome é obrigatório")
     @Size(min = 2, max = 100, message = "O nome deve ter entre 2 e 100 caracteres")
     private String name;
+
+    private Boolean band;
 }

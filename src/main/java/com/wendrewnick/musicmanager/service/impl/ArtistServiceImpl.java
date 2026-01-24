@@ -47,8 +47,10 @@ public class ArtistServiceImpl implements ArtistService {
         if (artistRepository.existsByNameIgnoreCase(artistDTO.getName())) {
             throw new BusinessException("Já existe um artista cadastrado com este nome: " + artistDTO.getName());
         }
+        boolean isBand = artistDTO.getBand() != null ? artistDTO.getBand() : true;
         Artist artist = Artist.builder()
                 .name(artistDTO.getName())
+                .band(isBand)
                 .build();
         return toDTO(artistRepository.save(artist));
     }
@@ -63,6 +65,9 @@ public class ArtistServiceImpl implements ArtistService {
         }
 
         artist.setName(artistDTO.getName());
+        if (artistDTO.getBand() != null) {
+            artist.setBand(artistDTO.getBand());
+        }
         return toDTO(artistRepository.save(artist));
     }
 
@@ -83,6 +88,7 @@ public class ArtistServiceImpl implements ArtistService {
         return ArtistDTO.builder()
                 .id(artist.getId())
                 .name(artist.getName())
+                .band(artist.isBand())
                 .build();
     }
 }
