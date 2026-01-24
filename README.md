@@ -132,22 +132,6 @@ Todos os endpoints estão documentados. Upload de capas (criação de álbum com
 
 ---
 
-## Estrutura do projeto
-
-```text
-src/main/java/com/wendrewnick/musicmanager/
-├── config/          # CORS, JPA, MinIO, OpenAPI, WebSocket, sync de regionais
-├── controller/      # REST (Artists, Albums, Auth, Regionais, Home)
-├── dto/
-├── entity/          # Artist, Album, User, Regional (JPA)
-├── exception/       # GlobalExceptionHandler, exceções de negócio
-├── repository/
-├── security/        # JWT filter, rate limit, SecurityConfig
-└── service/ + impl/
-```
-
----
-
 ## Referências rápidas
 
 - **CRUD:** `GET/POST/PUT/DELETE` em `/api/v1/artists` e `/api/v1/albums`.
