@@ -4,18 +4,19 @@ import com.wendrewnick.musicmanager.dto.ApiResponse;
 import com.wendrewnick.musicmanager.dto.AlbumDTO;
 import com.wendrewnick.musicmanager.service.AlbumService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -33,12 +34,12 @@ public class AlbumController {
     @Operation(summary = "Listar álbuns", description = "Paginação. Filtros: title, artistName, soloOrBand (true=band, false=solo).")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<AlbumDTO>>> getAllAlbums(
-            @RequestParam(required = false) String title,
-            @RequestParam(required = false) String artistName,
-            @RequestParam(required = false) Boolean soloOrBand,
-            Pageable pageable) {
+            @Parameter(description = "Filtrar por título") @RequestParam(required = false) String title,
+            @Parameter(description = "Filtrar por nome do artista") @RequestParam(required = false) String artistName,
+            @Parameter(description = "true = bandas, false = artistas solo") @RequestParam(required = false) Boolean soloOrBand,
+            @ParameterObject Pageable pageable) {
         Page<AlbumDTO> page = albumService.findAll(title, artistName, soloOrBand, pageable);
-        return ResponseEntity.ok(ApiResponse.success(page, "Álbuns recuperados com sucesso"));
+        return ResponseEntity.ok(ApiResponse.success(page, "Álbuns listados com sucesso"));
     }
 
     @Operation(summary = "Buscar álbum por ID")
