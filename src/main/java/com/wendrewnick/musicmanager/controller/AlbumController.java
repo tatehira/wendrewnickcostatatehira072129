@@ -30,13 +30,14 @@ public class AlbumController {
 
     private final AlbumService albumService;
 
-    @Operation(summary = "Listar todos os álbuns", description = "Suporta paginação e filtro por título ou nome do artista")
+    @Operation(summary = "Listar álbuns", description = "Paginação. Filtros: title, artistName, soloOrBand (true=band, false=solo).")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<AlbumDTO>>> getAllAlbums(
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String artistName,
+            @RequestParam(required = false) Boolean soloOrBand,
             Pageable pageable) {
-        Page<AlbumDTO> page = albumService.findAll(title, artistName, pageable);
+        Page<AlbumDTO> page = albumService.findAll(title, artistName, soloOrBand, pageable);
         return ResponseEntity.ok(ApiResponse.success(page, "Álbuns recuperados com sucesso"));
     }
 
@@ -55,6 +56,31 @@ public class AlbumController {
         AlbumDTO created = albumService.create(albumDTO, images);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(created, "Álbum criado com sucesso"));
+    }
+
+    @Operation(summary = "Atualizar um álbum")
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<AlbumDTO>> updateAlbum(
+            @PathVariable UUID id,
+            @Valid @RequestBody AlbumDTO albumDTO) {
+        AlbumDTO updated = albumService.update(id, albumDTO);
+        return ResponseEntity.ok(ApiResponse.success(updated, "Álbum atualizado com sucesso"));
+    }
+
+    @Operation(summary = "Adicionar capas ao álbum", description = "Upload de múltiplas imagens (multipart/form-data).")
+    @PostMapping(value = "/{id}/covers", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<Void>> addAlbumCovers(
+            @PathVariable UUID id,
+            @Parameter(description = "Arquivos de imagem (jpg, png)", content = @Content(mediaType = "multipart/form-data")) @RequestPart("files") List<MultipartFile> files) {
+        albumService.addCovers(id, files);
+        return ResponseEntity.ok(ApiResponse.success(null, "Capas adicionadas com sucesso"));
+    }
+
+    @Operation(summary = "Obter URLs pré-assinadas das capas", description = "Retorna URLs temporárias (30 min) para acesso às imagens no MinIO.")
+    @GetMapping("/{id}/covers")
+    public ResponseEntity<ApiResponse<List<com.wendrewnick.musicmanager.dto.AlbumCoverDTO>>> getAlbumCovers(
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(albumService.getCovers(id)));
     }
 
     @Operation(summary = "Deletar um álbum")

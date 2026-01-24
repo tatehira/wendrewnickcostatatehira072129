@@ -9,11 +9,17 @@ import java.util.List;
 import java.util.UUID;
 
 public interface AlbumService {
-    Page<AlbumDTO> findAll(String title, String artistName, Pageable pageable);
+    Page<AlbumDTO> findAll(String title, String artistName, Boolean soloOrBand, Pageable pageable);
 
     AlbumDTO findById(UUID id);
 
     AlbumDTO create(AlbumDTO albumDTO, List<MultipartFile> images);
+
+    AlbumDTO update(UUID id, AlbumDTO albumDTO);
+
+    void addCovers(UUID id, List<MultipartFile> images);
+
+    List<com.wendrewnick.musicmanager.dto.AlbumCoverDTO> getCovers(UUID id);
 
     void delete(UUID id);
 }

@@ -1,30 +1,61 @@
 # Music Manager API
 
-> **API REST Profissional para Gerenciamento de Artistas e Álbuns**
-> 
-> *Desenvolvido com foco em Arquitetura Corporativa, Clean Code e Segurança.*
+API REST em Java (Spring Boot) para gerenciamento de artistas e álbuns. Relacionamento N:N entre artistas e álbuns, autenticação JWT, upload de capas em MinIO, integração com API externa de regionais e WebSocket para notificação de novos álbuns.
 
 ---
 
-## Visão Geral
+## Como rodar
 
-Este projeto é uma **API RESTful** desenvolvida em **Java + Spring Boot** para resolver o desafio de gerenciamento de catálogo musical. 
-Ele implementa padrões de mercado para garantir escalabilidade, segurança e manutenibilidade, servindo como uma base sólida para sistemas corporativos.
+**Pré-requisito:** Docker e Docker Compose instalados.
 
-**Principais Funcionalidades:**
--  **CRUD Completo** de Artistas e Álbuns.
--  **Autenticação JWT** (Access + Refresh Token) com Spring Security.
--  **Rate Limiting** para proteção contra ataques de força bruta.
--  **Upload de Imagens** integrado com MinIO (Compatível com AWS S3).
--  **Dockerizado** para execução agnóstica de ambiente.
--  **Documentação Viva** com Swagger/OpenAPI.
--  **Internacionalização (i18n)** completa em Português (PT-BR).
+```bash
+docker-compose up --build
+```
+
+A API sobe na porta 8080. PostgreSQL e MinIO sobem como dependências. O bucket MinIO é criado automaticamente pelo job `createbuckets` ou pela própria aplicação na inicialização (se ainda não existir).
+
+**Nenhum passo manual.** Não use `localhost` dentro dos containers; os serviços se comunicam pelos nomes `postgres` e `minio`.
 
 ---
 
-##  Arquitetura e Design
+## Variáveis de ambiente (Docker)
 
-O projeto segue uma **Arquitetura em Camadas (Layered Architecture)** rigorosa para separar responsabilidades.
+| Variável | Descrição | Exemplo |
+|----------|-----------|---------|
+| `SPRING_DATASOURCE_URL` | JDBC URL do PostgreSQL | `jdbc:postgresql://postgres:5432/musicdb` |
+| `SPRING_DATASOURCE_USERNAME` | Usuário do banco | `postgres` |
+| `SPRING_DATASOURCE_PASSWORD` | Senha do banco | `postgres` |
+| `MINIO_URL` | Endpoint do MinIO | `http://minio:9000` |
+| `MINIO_ACCESS_KEY` | Access key do MinIO | `minioadmin` |
+| `MINIO_SECRET_KEY` | Secret key do MinIO | `minioadmin` |
+
+O nome do bucket (`minio.bucket-name`) vem do `application.yml` (`music-covers`). Outras configs (JWT, actuator, etc.) também podem ser sobrescritas via env.
+
+---
+
+## Como testar
+
+```bash
+mvn test
+```
+
+Testes unitários cobrem a camada de serviço (Artist, Album, regras de negócio). Nenhum teste de integração ou E2E.
+
+---
+
+## Autenticação
+
+1. **Login:** `POST /api/v1/auth/login` com `{"username":"admin","password":"admin"}`. Retorna `access_token` (5 min) e `refresh_token` (24 h).
+2. **Uso:** Enviar `Authorization: Bearer <access_token>` nas requisições protegidas.
+3. **Refresh:** `POST /api/v1/auth/refresh` com `Authorization: Bearer <refresh_token>`. Retorna novo `access_token`; o `refresh_token` segue o mesmo.
+
+Endpoints públicos: `/`, `/api/v1/auth/**`, `/actuator/**`, `/swagger-ui/**`, `/api-docs/**`. O resto exige JWT.
+
+---
+
+## Arquitetura e Design
+
+O projeto segue uma **Arquitetura em Camadas (Layered Architecture)** para separar responsabilidades.
 
 ```mermaid
 graph TD
@@ -36,98 +67,90 @@ graph TD
 ```
 
 ### Estrutura de Pastas (ASCII)
+
 ```text
 src/main/java/com/wendrewnick/musicmanager
-├── config/             # Configurações (Swagger, Security, RateLimit)
+├── config/             # Configurações (Swagger, Security, CORS, MinIO, WebSocket, RateLimit)
 ├── controller/         # Camada de Exposição (REST Endpoints)
 ├── dto/                # Objetos de Transferência de Dados (Inputs/Outputs)
 ├── entity/             # Entidades JPA (Mapeamento ORM)
 ├── exception/          # Tratamento Global de Erros (GlobalExceptionHandler)
 ├── repository/         # Camada de Acesso a Dados (Interfaces JPA)
+├── security/           # JWT, Rate Limit, SecurityConfig
 └── service/            # Regras de Negócio e Interfaces
     └── impl/           # Implementação dos Serviços
 ```
 
----
-
-## Stack Tecnológica
-
-| Tecnologia | Versão | Função Principal |
-| :--- | :--- | :--- |
-| **Java** | 21 | Linguagem de programação (LTS). |
-| **Spring Boot** | 3.2.2 | Framework para desenvolvimento ágil. |
-| **PostgreSQL** | 15+ | Banco de dados relacional robusto. |
-| **Flyway** | 9.x | Versionamento (Migrations) do Banco de Dados. |
-| **MinIO** | 8.5.7 | Object Storage para upload de imagens. |
-| **Docker** | Latest | Orquestração de containers e ambiente. |
-| **Spring Security** | 6.x | Segurança, Autenticação e Autorização. |
-| **JWT (JJWT)** | 0.12.3 | JSON Web Token para sessões stateless. |
-| **Bucket4j** | 8.7.0 | Implementação de Rate Limiting. |
-| **Lombok** | 1.18.x | Redução de código boilerplate. |
+- **Camadas:** Controller → Service → Repository. Regras de negócio só nos serviços.
+- **API versionada:** `/api/v1` em todos os endpoints.
+- **Banco:** Flyway para migrações. Schema + seed em `db/migration/`.
+- **Imagens:** Apenas no MinIO (chaves em `album_images`). Nada em filesystem ou como BLOB no banco. URLs pré-assinadas com 30 min de expiração.
+- **Regionais:** Tabela `regionais` sincronizada com API externa (`integrador-argus-api.geia.vip`). Sincronização em background (não bloqueia startup) e a cada 1 minuto. Novos → INSERT; ausentes na API → `ativo = false`; alterados → inativa o antigo e insere o novo.
+- **WebSocket:** STOMP em `/ws`, tópico `/topic/albums`. Notificação quando um novo álbum é criado.
+- **Rate limit:** 10 req/min por usuário autenticado (ou por IP quando não autenticado). Resposta 429 em JSON.
+- **CORS:** Origem permitida apenas `localhost:8080` e `localhost:3000`. Nunca `*`.
+- **Health:** Liveness e readiness em `/actuator/health/liveness` e `/actuator/health/readiness`.
 
 ---
 
-## Como Executar (Guia Passo-a-Passo)
+## Swagger / OpenAPI
 
-Pré-requisito único: **Docker** instalado e rodando. Nada mais.
+Após subir a API:
 
-Escolha seu sistema operacional e o método de instalação preferido.
+- **Swagger UI:** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+- **OpenAPI JSON:** [http://localhost:8080/api-docs](http://localhost:8080/api-docs)
 
-### Windows
-```powershell
-docker compose up -d --build
+Todos os endpoints estão documentados. Upload de capas (criação de álbum com `multipart/form-data` e `POST /api/v1/albums/{id}/covers`) é testável via Swagger. Use **Authorize** com o access token obtido no login.
+
+---
+
+## Decisões e trade-offs
+
+- **JWT único para access e refresh:** Mesma estrutura, expirações diferentes. Não há claim `type` para distinguir; em produção faria sentido segregar ou usar refresh tokens opacos.
+- **Regionais em background:** Sync não bloqueia o startup. Falha na API externa é apenas logada; a aplicação continua rodando.
+- **Bucket MinIO:** Criado pelo job Docker ou na primeira inicialização da app. Em falha de conexão com MinIO, a app sobe mas uploads falham até o MinIO estar disponível.
+- **Ordenação de artistas:** Default `sort=name,asc`. Suporta `sort=name,desc` explicitamente.
+- **Álbuns por solo/banda:** Filtro `soloOrBand=true` (bandas) ou `soloOrBand=false` (solo). Exige atributo `is_band` em `artists`.
+
+---
+
+## Limitações
+
+- **Usuário único:** Apenas `admin`/`admin` (seed). Sem cadastro de usuários, roles ou ABAC.
+- **Sem soft delete:** Exclusão de artistas/álbuns é física.
+- **Sem paginação configurável** documentada além do padrão do Spring (page, size, sort).
+- **WebSocket e CORS:** Origens permitidas fixas (`localhost:8080`, `localhost:3000`). Em produção seria necessário configurar os domínios reais.
+
+---
+
+## O que *não* foi implementado (e por quê)
+
+- **Quarkus:** Escolhido Spring Boot para alinhar ao ecossistema já usado (Actuator, Spring Security, Spring Data, etc.).
+- **i18n formal:** Mensagens em PT-BR fixas. Não há suporte a múltiplos idiomas via properties.
+- **Testes de integração / E2E:** Apenas testes unitários na camada de serviço. Cobrir controllers e fluxos completos aumentaria o escopo; o foco foi em regras de negócio.
+- **Refresh token com revogação:** Tokens não são persistidos nem invalidados. Logout é apenas client-side.
+
+---
+
+## Estrutura do projeto
+
+```text
+src/main/java/com/wendrewnick/musicmanager/
+├── config/          # CORS, JPA, MinIO, OpenAPI, WebSocket, sync de regionais
+├── controller/      # REST (Artists, Albums, Auth, Regionais, Home)
+├── dto/
+├── entity/          # Artist, Album, User, Regional (JPA)
+├── exception/       # GlobalExceptionHandler, exceções de negócio
+├── repository/
+├── security/        # JWT filter, rate limit, SecurityConfig
+└── service/ + impl/
 ```
 
-### Linux
-```bash
-docker compose up -d --build
-```
-
-### Como Rodar os Testes
-Para verificar a integridade da aplicação e executar a suíte de testes unitários:
-```bash
-mvn test
-```
-
 ---
 
-##  Documentação da API
+## Referências rápidas
 
-Após iniciar, acesse a documentação interativa completa (Swagger UI). Nela você pode testar todos os endpoints diretamente pelo navegador.
-
--> **URL:** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
-
-### Credenciais de Acesso (Seed)
-O sistema cria automaticamente um usuário administrador na primeira execução:
-
-- **Usuário:** `admin`
-- **Senha:** `admin`
-
-> **Nota:** Para acessar os endpoints protegidos no Swagger, faça login no endpoint `/auth`, copie o **Access Token**, clique no botão **Authorize** (cadeado) e cole o token.
-
----
-
-## Decisões Técnicas
-
-1.  **JWT com Refresh Token:** Eu decidi implementar um fluxo completo de renovação de token para garantir segurança (tokens de acesso curtos) sem prejudicar a experiência do usuário (login persistente seguro).
-2.  **MinIO para Uploads:** Em vez de salvar imagens no disco do servidor (o que quebraria em ambientes de nuvem efêmeros), eu utilizei um Object Storage compatível com S3. Isso torna a migração para AWS S3 transparente.
-3.  **Rate Limiting:** Eu implementei um filtro de Servlet (Bucket4j) para proteger a API de abusos, garantindo disponibilidade mesmo sob carga.
-4.  **Padronização de API:** Respostas de sucesso seguem um envelope padrão (`ApiResponse`), enquanto erros utilizam o padrão RFC 7807 (`ProblemDetail`) para máxima interoperabilidade.
-5.  **Auditoria Automática:** Todas as entidades possuem rastreamento automático de criação e modificação (`createdAt`, `updatedAt`) via JPA Auditing.
-6.  **Testes Unitários:** A camada de serviço foi coberta com testes unitários usando **JUnit 5** e **Mockito** para garantir a integridade das regras de negócio.
-
-## Funcionalidades Sênior Implementadas (Edital)
-
-- **Relacionamento N:N:** Refatoração completa para permitir que um álbum tenha múltiplos artistas e vice-versa.
-- **WebSocket:** Notificação em tempo real via STOMP (`/topic/albums`) sempre que um novo álbum é cadastrado.
-- **Integração de Regionais:** Sincronização automática (Scheduled) com API externa, com lógica de criação, inativação e versionamento de registros.
-- **Observabilidade:** Endpoints de Health Check (Liveness e Readiness) expostos via Spring Actuator.
-- **Segurança Refinada:**
-    - Ajuste de **Rate Limit** para 10 requisições/minuto (conforme requisito).
-    - Configuração rigorosa de **CORS** para bloquear domínios externos não autorizados.
-
----
-
-<p align="center">
-  <i>Desenvolvido por Wendrew Nick Costa Tatehira</i>
-</p>
+- **CRUD:** `GET/POST/PUT/DELETE` em `/api/v1/artists` e `/api/v1/albums`.
+- **Paginação de álbuns:** `?page=0&size=10`. Filtros: `title`, `artistName`, `soloOrBand`.
+- **Artistas:** `?sort=name,asc` ou `?sort=name,desc`, filtro `name`.
+- **Capas:** `POST /api/v1/albums` (multipart: `data` + `images`) ou `POST /api/v1/albums/{id}/covers` (`files`). URLs pré-assinadas: `GET /api/v1/albums/{id}/covers`.
