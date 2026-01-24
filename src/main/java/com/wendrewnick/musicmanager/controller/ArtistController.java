@@ -4,10 +4,12 @@ import com.wendrewnick.musicmanager.dto.ApiResponse;
 import com.wendrewnick.musicmanager.dto.ArtistDTO;
 import com.wendrewnick.musicmanager.service.ArtistService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -28,10 +30,10 @@ public class ArtistController {
     @Operation(summary = "Listar artistas", description = "Paginação e filtro por nome. Ordenação alfabética: ?sort=name,asc ou ?sort=name,desc (default: name,asc).")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<ArtistDTO>>> getAllArtists(
-            @RequestParam(required = false) String name,
-            @org.springframework.data.web.PageableDefault(sort = "name", direction = org.springframework.data.domain.Sort.Direction.ASC) Pageable pageable) {
+            @Parameter(description = "Filtrar por nome") @RequestParam(required = false) String name,
+            @ParameterObject @org.springframework.data.web.PageableDefault(sort = "name", direction = org.springframework.data.domain.Sort.Direction.ASC) Pageable pageable) {
         Page<ArtistDTO> page = artistService.findAll(name, pageable);
-        return ResponseEntity.ok(ApiResponse.success(page, "Artistas recuperados com sucesso"));
+        return ResponseEntity.ok(ApiResponse.success(page, "Artistas listados com sucesso"));
     }
 
     @Operation(summary = "Buscar artista por ID")
