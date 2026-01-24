@@ -4,6 +4,17 @@ API REST em Java (Spring Boot) para gerenciamento de artistas e álbuns. Relacio
 
 ---
 
+## Dados do Candidato
+
+| Campo | Valor |
+|-------|-------|
+| **Nome** | Wendrew Nick Costa Tatehira |
+| **Inscrição** | 16323 |
+| **Processo Seletivo** | PROCESSO SELETIVO CONJUNTO Nº 001/2026/SEPLAG |
+| **Perfil/Vaga** | Engenheiro da Computação - Sênior |
+
+---
+
 ## Como rodar
 
 **Pré-requisito:** Docker e Docker Compose instalados.
