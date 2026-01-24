@@ -23,6 +23,12 @@ public class MinioServiceImpl implements MinioService {
     @Value("${minio.bucket-name}")
     private String bucketName;
 
+    @Value("${minio.url}")
+    private String minioInternalUrl;
+
+    @Value("${minio.public-url:${minio.url}}")
+    private String minioPublicUrl;
+
     @Override
     public String uploadFile(MultipartFile file) {
         String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
@@ -43,13 +49,14 @@ public class MinioServiceImpl implements MinioService {
     @Override
     public String getPresignedUrl(String objectName) {
         try {
-            return minioClient.getPresignedObjectUrl(
+            String url = minioClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .method(Method.GET)
                             .bucket(bucketName)
                             .object(objectName)
                             .expiry(30, TimeUnit.MINUTES)
                             .build());
+            return url.replace(minioInternalUrl, minioPublicUrl);
         } catch (Exception e) {
             throw new RuntimeException("Error generating presigned URL", e);
         }
