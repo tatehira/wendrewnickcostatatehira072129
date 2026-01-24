@@ -128,6 +128,36 @@ O sistema cria automaticamente um usuário administrador na primeira execução:
 
 ---
 
+## Variáveis de Ambiente (Docker)
+
+| Variável | Descrição | Valor Padrão |
+|----------|-----------|--------------|
+| `SPRING_DATASOURCE_URL` | URL do PostgreSQL | `jdbc:postgresql://postgres:5432/musicdb` |
+| `SPRING_DATASOURCE_USERNAME` | Usuário do banco | `postgres` |
+| `SPRING_DATASOURCE_PASSWORD` | Senha do banco | `postgres` |
+| `MINIO_URL` | Endpoint do MinIO | `http://minio:9000` |
+| `MINIO_ACCESS_KEY` | Access key MinIO | `minioadmin` |
+| `MINIO_SECRET_KEY` | Secret key MinIO | `minioadmin` |
+
+---
+
+## Trade-offs e Limitações
+
+### O que foi simplificado:
+- **Usuário único:** Apenas o usuário `admin` é criado via seed. Não há cadastro de novos usuários.
+- **Refresh Token sem persistência:** Tokens não são armazenados no banco; logout é apenas client-side.
+- **CORS restrito:** Apenas `localhost:8080` e `localhost:3000` são permitidos. Em produção, configurar os domínios reais.
+
+### O que NÃO foi implementado:
+- **Filtro por artista solo ou banda:** O assignment menciona essa query, mas não foi adicionado o campo `isBand` na entidade Artist. Seria necessário adicionar uma migration e refatorar a API.
+- **Testes de integração:** Apenas testes unitários foram implementados. Testes E2E exigiriam Testcontainers ou ambiente dedicado.
+
+### Pontos de atenção:
+- **API de Regionais:** Se a API externa estiver fora do ar, a sincronização falha silenciosamente (apenas log). A aplicação continua funcionando.
+- **MinIO bucket:** O bucket `music-covers` é criado automaticamente pelo container `createbuckets` no docker-compose.
+
+---
+
 <p align="center">
   <i>Desenvolvido por Wendrew Nick Costa Tatehira</i>
 </p>

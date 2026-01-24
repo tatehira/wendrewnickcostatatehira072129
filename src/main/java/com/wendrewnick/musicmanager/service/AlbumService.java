@@ -15,5 +15,11 @@ public interface AlbumService {
 
     AlbumDTO create(AlbumDTO albumDTO, List<MultipartFile> images);
 
+    AlbumDTO update(UUID id, AlbumDTO albumDTO);
+
+    void addCovers(UUID id, List<MultipartFile> files);
+
+    List<String> getCoverUrls(UUID id);
+
     void delete(UUID id);
 }

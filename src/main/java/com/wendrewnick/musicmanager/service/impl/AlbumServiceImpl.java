@@ -94,6 +94,56 @@ public class AlbumServiceImpl implements AlbumService {
 
     @Transactional
     @Override
+    public AlbumDTO update(UUID id, AlbumDTO dto) {
+        Album album = getEntityById(id);
+        album.setTitle(dto.getTitle());
+        album.setYear(dto.getYear());
+
+        if (dto.getArtistIds() != null && !dto.getArtistIds().isEmpty()) {
+            List<Artist> artists = artistRepository.findAllById(dto.getArtistIds());
+            if (artists.isEmpty()) {
+                throw new ResourceNotFoundException("Nenhum artista encontrado");
+            }
+            album.setArtists(new HashSet<>(artists));
+        }
+        return toDTO(albumRepository.save(album));
+    }
+
+    @Transactional
+    @Override
+    public void addCovers(UUID id, List<MultipartFile> files) {
+        Album album = getEntityById(id);
+        if (files == null || files.isEmpty()) {
+            throw new BusinessException("Nenhum arquivo enviado");
+        }
+        if (album.getImages() == null) {
+            album.setImages(new HashSet<>());
+        }
+        for (MultipartFile file : files) {
+            if (file.getContentType() == null || !file.getContentType().startsWith("image/")) {
+                throw new BusinessException("Arquivo deve ser uma imagem");
+            }
+            if (file.getSize() > 5 * 1024 * 1024) {
+                throw new BusinessException("Imagem excede 5MB");
+            }
+            album.getImages().add(minioService.uploadFile(file));
+        }
+        albumRepository.save(album);
+    }
+
+    @Override
+    public List<String> getCoverUrls(UUID id) {
+        Album album = getEntityById(id);
+        if (album.getImages() == null || album.getImages().isEmpty()) {
+            return List.of();
+        }
+        return album.getImages().stream()
+                .map(minioService::getPresignedUrl)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    @Override
     public void delete(UUID id) {
         if (!albumRepository.existsById(id)) {
             throw new ResourceNotFoundException("Álbum não encontrado com o ID: " + id);

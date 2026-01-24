@@ -57,6 +57,30 @@ public class AlbumController {
                 .body(ApiResponse.success(created, "Álbum criado com sucesso"));
     }
 
+    @Operation(summary = "Atualizar um álbum")
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<AlbumDTO>> updateAlbum(
+            @PathVariable UUID id,
+            @Valid @RequestBody AlbumDTO albumDTO) {
+        AlbumDTO updated = albumService.update(id, albumDTO);
+        return ResponseEntity.ok(ApiResponse.success(updated, "Álbum atualizado"));
+    }
+
+    @Operation(summary = "Adicionar capas ao álbum", description = "Upload de imagens (multipart)")
+    @PostMapping(value = "/{id}/covers", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<Void>> addCovers(
+            @PathVariable UUID id,
+            @RequestPart("files") List<MultipartFile> files) {
+        albumService.addCovers(id, files);
+        return ResponseEntity.ok(ApiResponse.success(null, "Capas adicionadas"));
+    }
+
+    @Operation(summary = "Obter URLs das capas", description = "Retorna URLs pré-assinadas (30min)")
+    @GetMapping("/{id}/covers")
+    public ResponseEntity<ApiResponse<List<String>>> getCoverUrls(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(albumService.getCoverUrls(id)));
+    }
+
     @Operation(summary = "Deletar um álbum")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteAlbum(@PathVariable UUID id) {
