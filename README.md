@@ -31,14 +31,20 @@ A API sobe na porta 8080. PostgreSQL e MinIO sobem como dependências. O bucket 
 
 ## Variáveis de ambiente (Docker)
 
-| Variável | Descrição | Exemplo |
-|----------|-----------|---------|
-| `SPRING_DATASOURCE_URL` | JDBC URL do PostgreSQL | `jdbc:postgresql://postgres:5432/musicdb` |
-| `SPRING_DATASOURCE_USERNAME` | Usuário do banco | `postgres` |
-| `SPRING_DATASOURCE_PASSWORD` | Senha do banco | `postgres` |
-| `MINIO_URL` | Endpoint do MinIO | `http://minio:9000` |
-| `MINIO_ACCESS_KEY` | Access key do MinIO | `minioadmin` |
-| `MINIO_SECRET_KEY` | Secret key do MinIO | `minioadmin` |
+| Serviço | Variável | Descrição | Exemplo |
+|---------|----------|-----------|---------|
+| **app** | `SPRING_DATASOURCE_URL` | JDBC URL do PostgreSQL | `jdbc:postgresql://postgres:5432/musicdb` |
+| **app** | `SPRING_DATASOURCE_USERNAME` | Usuário do banco | `postgres` |
+| **app** | `SPRING_DATASOURCE_PASSWORD` | Senha do banco | `postgres` |
+| **app** | `MINIO_URL` | Endpoint interno do MinIO | `http://minio:9000` |
+| **app** | `MINIO_PUBLIC_URL` | Endpoint externo do MinIO | `http://localhost:9000` |
+| **app** | `MINIO_ACCESS_KEY` | Access key do MinIO | `minioadmin` |
+| **app** | `MINIO_SECRET_KEY` | Secret key do MinIO | `minioadmin` |
+| **postgres** | `POSTGRES_DB` | Nome do banco de dados | `musicdb` |
+| **postgres** | `POSTGRES_USER` | Usuário do PostgreSQL | `postgres` |
+| **postgres** | `POSTGRES_PASSWORD` | Senha do PostgreSQL | `postgres` |
+| **minio** | `MINIO_ROOT_USER` | Usuário admin do MinIO | `minioadmin` |
+| **minio** | `MINIO_ROOT_PASSWORD` | Senha admin do MinIO | `minioadmin` |
 
 O nome do bucket (`minio.bucket-name`) vem do `application.yml` (`music-covers`). Outras configs (JWT, actuator, etc.) também podem ser sobrescritas via env.
 
@@ -46,8 +52,22 @@ O nome do bucket (`minio.bucket-name`) vem do `application.yml` (`music-covers`)
 
 ## Como testar
 
+**Via Docker (recomendado)** - não requer Java instalado:
+
 ```bash
-mvn test
+docker run --rm -v "$(pwd)":/app -w /app maven:3.9-eclipse-temurin-21 mvn test
+```
+
+**Windows PowerShell:**
+
+```powershell
+docker run --rm -v "${PWD}:/app" -w /app maven:3.9-eclipse-temurin-21 mvn test
+```
+
+**Com Maven local** (requer Java 21):
+
+```bash
+./mvnw test
 ```
 
 Testes unitários cobrem a camada de serviço (Artist, Album, regras de negócio). Nenhum teste de integração ou E2E.
@@ -110,6 +130,7 @@ Após subir a API:
 
 - **Swagger UI:** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
 - **OpenAPI JSON:** [http://localhost:8080/api-docs](http://localhost:8080/api-docs)
+- **MinIO Console:** [http://localhost:9001](http://localhost:9001) (login: `minioadmin` / `minioadmin`)
 
 Todos os endpoints estão documentados. Upload de capas (criação de álbum com `multipart/form-data` e `POST /api/v1/albums/{id}/covers`) é testável via Swagger. Use **Authorize** com o access token obtido no login.
 
