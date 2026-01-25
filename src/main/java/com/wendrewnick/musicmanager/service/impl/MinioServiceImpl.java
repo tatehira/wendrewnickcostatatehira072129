@@ -42,7 +42,6 @@ public class MinioServiceImpl implements MinioService {
 
     @Override
     public String getPresignedUrl(String objectName) {
-        // Bucket é público (anonymous download), então usamos URL direta
         return publicUrl + "/" + bucketName + "/" + objectName;
     }
 }

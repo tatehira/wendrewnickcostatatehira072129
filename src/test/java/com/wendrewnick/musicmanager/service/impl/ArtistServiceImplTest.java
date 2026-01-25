@@ -12,7 +12,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.Optional;
@@ -116,7 +118,7 @@ class ArtistServiceImplTest {
 
     @Test
     void findAll_ShouldReturnPage_WhenCalled() {
-        Pageable pageable = Pageable.unpaged();
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("name").ascending());
         List<Artist> artists = List.of(
                 Artist.builder().id(UUID.randomUUID()).name("A1").build(),
                 Artist.builder().id(UUID.randomUUID()).name("A2").build());
