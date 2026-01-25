@@ -13,4 +13,12 @@ public interface RegionalRepository extends JpaRepository<Regional, UUID> {
     List<Regional> findByAtivoTrue();
 
     Optional<Regional> findByRegionalIdAndAtivoTrue(Integer regionalId);
+
+    List<Regional> findByNomeContainingIgnoreCase(String nome);
+
+    List<Regional> findByRegionalId(Integer regionalId);
+
+    List<Regional> findByAtivo(boolean ativo);
+
+    List<Regional> findByNomeContainingIgnoreCaseAndAtivo(String nome, boolean ativo);
 }

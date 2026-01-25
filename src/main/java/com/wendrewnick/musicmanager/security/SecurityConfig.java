@@ -62,8 +62,7 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(rateLimitFilter, JwtAuthenticationFilter.class); // Rate Limit after Auth to identify
-                                                                                 // user
+                .addFilterAfter(rateLimitFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }

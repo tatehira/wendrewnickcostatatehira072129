@@ -111,4 +111,24 @@ public class RegionalService {
     public List<Regional> findAll() {
         return regionalRepository.findAll();
     }
+
+    public List<Regional> findWithFilters(String nome, Integer id, Boolean ativo) {
+        if (id != null) {
+            return regionalRepository.findByRegionalId(id);
+        }
+        
+        if (nome != null && !nome.isBlank() && ativo != null) {
+            return regionalRepository.findByNomeContainingIgnoreCaseAndAtivo(nome, ativo);
+        }
+        
+        if (nome != null && !nome.isBlank()) {
+            return regionalRepository.findByNomeContainingIgnoreCase(nome);
+        }
+        
+        if (ativo != null) {
+            return regionalRepository.findByAtivo(ativo);
+        }
+        
+        return regionalRepository.findAll();
+    }
 }

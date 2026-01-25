@@ -68,7 +68,6 @@ class AlbumServiceImplTest {
         MultipartFile image = mock(MultipartFile.class);
 
         when(artistRepository.findAllById(any())).thenReturn(List.of(artist));
-        when(image.isEmpty()).thenReturn(false);
         when(image.getContentType()).thenReturn("image/jpeg");
         when(image.getSize()).thenReturn(1024L);
         when(minioService.uploadFile(image)).thenReturn("cover-key");
