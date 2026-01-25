@@ -1,10 +1,8 @@
 package com.wendrewnick.musicmanager.service.impl;
 
 import com.wendrewnick.musicmanager.service.MinioService;
-import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
-import io.minio.http.Method;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -12,7 +10,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +19,9 @@ public class MinioServiceImpl implements MinioService {
 
     @Value("${minio.bucket-name}")
     private String bucketName;
+
+    @Value("${minio.public-url:http://localhost:9000}")
+    private String publicUrl;
 
     @Override
     public String uploadFile(MultipartFile file) {
@@ -42,16 +42,7 @@ public class MinioServiceImpl implements MinioService {
 
     @Override
     public String getPresignedUrl(String objectName) {
-        try {
-            return minioClient.getPresignedObjectUrl(
-                    GetPresignedObjectUrlArgs.builder()
-                            .method(Method.GET)
-                            .bucket(bucketName)
-                            .object(objectName)
-                            .expiry(30, TimeUnit.MINUTES)
-                            .build());
-        } catch (Exception e) {
-            throw new RuntimeException("Error generating presigned URL", e);
-        }
+        // Bucket é público (anonymous download), então usamos URL direta
+        return publicUrl + "/" + bucketName + "/" + objectName;
     }
 }
