@@ -10,6 +10,7 @@ import com.wendrewnick.musicmanager.repository.ArtistRepository;
 import com.wendrewnick.musicmanager.service.AlbumService;
 import com.wendrewnick.musicmanager.service.MinioService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AlbumServiceImpl implements AlbumService {
 
     private final AlbumRepository albumRepository;
@@ -68,11 +70,15 @@ public class AlbumServiceImpl implements AlbumService {
 
         if (images != null && !images.isEmpty()) {
             for (MultipartFile img : images) {
+                if (img == null || img.isEmpty()) {
+                    throw new BusinessException("Arquivo não pode ser vazio");
+                }
                 if (img.getContentType() == null || !img.getContentType().startsWith("image/")) {
                     throw new BusinessException("Todos os arquivos devem ser imagens válidas (PNG, JPG, etc).");
                 }
                 if (img.getSize() > 5 * 1024 * 1024) { // 5MB
-                    throw new BusinessException("A imagem " + img.getOriginalFilename() + " excede 5MB.");
+                    String filename = img.getOriginalFilename() != null ? img.getOriginalFilename() : "arquivo";
+                    throw new BusinessException("A imagem " + filename + " excede 5MB.");
                 }
                 String key = minioService.uploadFile(img);
                 imageKeys.add(key);
@@ -89,7 +95,11 @@ public class AlbumServiceImpl implements AlbumService {
         Album savedAlbum = albumRepository.save(album);
         AlbumDTO dto = toDTO(savedAlbum);
 
-        messagingTemplate.convertAndSend("/topic/albums", dto);
+        try {
+            messagingTemplate.convertAndSend("/topic/albums", dto);
+        } catch (Exception e) {
+            log.warn("Erro ao enviar notificação WebSocket, continuando...", e);
+        }
 
         return dto;
     }
@@ -122,6 +132,9 @@ public class AlbumServiceImpl implements AlbumService {
             album.setImages(new HashSet<>());
         }
         for (MultipartFile file : files) {
+            if (file == null || file.isEmpty()) {
+                throw new BusinessException("Arquivo não pode ser vazio");
+            }
             if (file.getContentType() == null || !file.getContentType().startsWith("image/")) {
                 throw new BusinessException("Arquivo deve ser uma imagem");
             }
@@ -162,7 +175,15 @@ public class AlbumServiceImpl implements AlbumService {
         List<String> presignedUrls = null;
         if (album.getImages() != null && !album.getImages().isEmpty()) {
             presignedUrls = album.getImages().stream()
-                    .map(minioService::getPresignedUrl)
+                    .map(imageKey -> {
+                        try {
+                            return minioService.getPresignedUrl(imageKey);
+                        } catch (Exception e) {
+                            log.warn("Erro ao gerar URL para imagem: {}", imageKey, e);
+                            return null;
+                        }
+                    })
+                    .filter(url -> url != null)
                     .collect(Collectors.toList());
         }
 

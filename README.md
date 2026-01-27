@@ -166,6 +166,7 @@ rate-limit:
 - **Ordenação de artistas:** Default `sort=name,asc`. Suporta `sort=name,desc` explicitamente.
 - **Álbuns por solo/banda:** Filtro `soloOrBand=true` (bandas) ou `soloOrBand=false` (solo). Exige atributo `is_band` em `artists`.
 - **Rate limit com fail-open:** Em caso de erro no rate limit, a requisição é permitida (fail-open). Previne que bugs no rate limit bloqueiem a aplicação. Limpeza automática de buckets expirados (10 min de inatividade) previne memory leak em cenários de alto tráfego.
+- **Tratamento de exceções:** Todas as exceções retornam ProblemDetail (RFC 7807) com status HTTP apropriado. Nenhum erro 500 não tratado; falhas de MinIO, API externa, banco de dados e validações são capturadas e retornadas de forma estruturada.
 
 ---
 

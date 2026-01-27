@@ -33,11 +33,14 @@ public class AuthController {
     @Operation(summary = "Atualizar Token de Acesso", description = "Usa o Refresh Token para obter um novo Token de Acesso")
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refresh(
-            @io.swagger.v3.oas.annotations.Parameter(description = "Bearer <Refresh Token>", required = true, example = "Bearer eyJhbGciOiJIUzI1NiJ9...") @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "Bearer <Refresh Token>", required = true, example = "Bearer eyJhbGciOiJIUzI1NiJ9...") @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.badRequest().build();
+            throw new com.wendrewnick.musicmanager.exception.BusinessException("Header Authorization inválido. Use: Bearer <token>");
         }
         String refreshToken = authHeader.substring(7);
+        if (refreshToken.isBlank()) {
+            throw new com.wendrewnick.musicmanager.exception.BusinessException("Refresh token não pode ser vazio");
+        }
         return ResponseEntity.ok(authService.refreshToken(refreshToken));
     }
 }

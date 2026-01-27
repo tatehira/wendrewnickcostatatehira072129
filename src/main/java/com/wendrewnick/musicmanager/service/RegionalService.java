@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wendrewnick.musicmanager.dto.RegionalExternalDTO;
 import com.wendrewnick.musicmanager.entity.Regional;
+import com.wendrewnick.musicmanager.exception.ExternalApiException;
 import com.wendrewnick.musicmanager.repository.RegionalRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -101,11 +102,20 @@ public class RegionalService {
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() != 200) {
-            throw new RuntimeException("Falha na API externa: " + response.statusCode());
+            throw new ExternalApiException("Falha na API externa: " + response.statusCode());
         }
 
-        return objectMapper.readValue(response.body(), new TypeReference<>() {
-        });
+        String responseBody = response.body();
+        if (responseBody == null || responseBody.isBlank()) {
+            throw new ExternalApiException("Resposta vazia da API externa");
+        }
+
+        try {
+            return objectMapper.readValue(responseBody, new TypeReference<>() {
+            });
+        } catch (Exception e) {
+            throw new ExternalApiException("Erro ao processar resposta da API externa", e);
+        }
     }
 
     public List<Regional> findAll() {
@@ -113,22 +123,22 @@ public class RegionalService {
     }
 
     public List<Regional> findWithFilters(String nome, Integer id, Boolean ativo) {
+        List<Regional> result;
+        
         if (id != null) {
-            return regionalRepository.findByRegionalId(id);
+            result = regionalRepository.findByRegionalId(id);
+        } else if (nome != null && !nome.isBlank()) {
+            if (ativo != null) {
+                result = regionalRepository.findByNomeContainingIgnoreCaseAndAtivo(nome, ativo);
+            } else {
+                result = regionalRepository.findByNomeContainingIgnoreCase(nome);
+            }
+        } else if (ativo != null) {
+            result = regionalRepository.findByAtivo(ativo);
+        } else {
+            result = regionalRepository.findAll();
         }
         
-        if (nome != null && !nome.isBlank() && ativo != null) {
-            return regionalRepository.findByNomeContainingIgnoreCaseAndAtivo(nome, ativo);
-        }
-        
-        if (nome != null && !nome.isBlank()) {
-            return regionalRepository.findByNomeContainingIgnoreCase(nome);
-        }
-        
-        if (ativo != null) {
-            return regionalRepository.findByAtivo(ativo);
-        }
-        
-        return regionalRepository.findAll();
+        return result;
     }
 }
