@@ -29,6 +29,7 @@ services:
       - POSTGRES_DB=musicdb
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
+      - POSTGRES_HOST_AUTH_METHOD=md5
     ports:
       - "5432:5432"
     volumes:
@@ -62,7 +63,6 @@ services:
     networks:
       - music-network
 
-  # Initialization job to create the bucket in MinIO
   createbuckets:
     image: minio/mc
     depends_on:
