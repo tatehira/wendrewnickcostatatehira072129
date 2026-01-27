@@ -1,5 +1,6 @@
 package com.wendrewnick.musicmanager.service.impl;
 
+import com.wendrewnick.musicmanager.exception.StorageException;
 import com.wendrewnick.musicmanager.service.MinioService;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
@@ -31,7 +32,16 @@ public class MinioServiceImpl implements MinioService {
 
     @Override
     public String uploadFile(MultipartFile file) {
-        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        if (file == null || file.isEmpty()) {
+            throw new StorageException("Arquivo não pode ser vazio");
+        }
+        
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || originalFilename.isBlank()) {
+            originalFilename = "arquivo";
+        }
+        
+        String fileName = UUID.randomUUID() + "_" + originalFilename;
         try (InputStream inputStream = file.getInputStream()) {
             minioClient.putObject(
                     PutObjectArgs.builder()
@@ -42,7 +52,7 @@ public class MinioServiceImpl implements MinioService {
                             .build());
             return fileName;
         } catch (Exception e) {
-            throw new RuntimeException("Error uploading file to MinIO", e);
+            throw new StorageException("Erro ao fazer upload do arquivo", e);
         }
     }
 
@@ -58,7 +68,7 @@ public class MinioServiceImpl implements MinioService {
                             .build());
             return url.replace(minioInternalUrl, minioPublicUrl);
         } catch (Exception e) {
-            throw new RuntimeException("Error generating presigned URL", e);
+            throw new StorageException("Erro ao gerar URL pré-assinada", e);
         }
     }
 }

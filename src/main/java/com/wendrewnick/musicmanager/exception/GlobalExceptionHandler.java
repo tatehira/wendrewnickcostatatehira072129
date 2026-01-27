@@ -1,15 +1,21 @@
 package com.wendrewnick.musicmanager.exception;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.net.URI;
@@ -102,5 +108,95 @@ public class GlobalExceptionHandler {
         problemDetail.setTitle("Arquivo muito grande");
         problemDetail.setProperty("timestamp", Instant.now());
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(problemDetail);
+    }
+
+    @ExceptionHandler(StorageException.class)
+    public ResponseEntity<ProblemDetail> handleStorageException(StorageException e) {
+        log.error("Erro no armazenamento", e);
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE,
+                "Erro ao processar arquivo. Tente novamente mais tarde.");
+        problemDetail.setTitle("Erro no Armazenamento");
+        problemDetail.setProperty("timestamp", Instant.now());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(problemDetail);
+    }
+
+    @ExceptionHandler(ExternalApiException.class)
+    public ResponseEntity<ProblemDetail> handleExternalApiException(ExternalApiException e) {
+        log.error("Erro na API externa", e);
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_GATEWAY,
+                "Erro ao comunicar com serviço externo. Tente novamente mais tarde.");
+        problemDetail.setTitle("Erro na API Externa");
+        problemDetail.setProperty("timestamp", Instant.now());
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(problemDetail);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ProblemDetail> handleDataIntegrityViolationException(DataIntegrityViolationException e) {
+        log.error("Violação de integridade de dados", e);
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+                "Operação não permitida: violação de regra de negócio (ex: registro duplicado).");
+        problemDetail.setTitle("Conflito de Dados");
+        problemDetail.setProperty("timestamp", Instant.now());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(problemDetail);
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<ProblemDetail> handleDataAccessException(DataAccessException e) {
+        log.error("Erro de acesso ao banco de dados", e);
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE,
+                "Erro ao acessar o banco de dados. Tente novamente mais tarde.");
+        problemDetail.setTitle("Erro no Banco de Dados");
+        problemDetail.setProperty("timestamp", Instant.now());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(problemDetail);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ProblemDetail> handleIllegalArgumentException(IllegalArgumentException e) {
+        log.warn("Argumento inválido", e);
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+                e.getMessage() != null ? e.getMessage() : "Parâmetro inválido fornecido.");
+        problemDetail.setTitle("Parâmetro Inválido");
+        problemDetail.setProperty("timestamp", Instant.now());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ProblemDetail> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
+        log.warn("Tipo de argumento inválido", e);
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+                "Formato de parâmetro inválido. Verifique o tipo de dados enviado.");
+        problemDetail.setTitle("Tipo de Parâmetro Inválido");
+        problemDetail.setProperty("timestamp", Instant.now());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ProblemDetail> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+        log.warn("Mensagem HTTP não legível", e);
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+                "Formato de dados inválido. Verifique o JSON enviado.");
+        problemDetail.setTitle("Formato de Dados Inválido");
+        problemDetail.setProperty("timestamp", Instant.now());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
+    }
+
+    @ExceptionHandler(JsonProcessingException.class)
+    public ResponseEntity<ProblemDetail> handleJsonProcessingException(JsonProcessingException e) {
+        log.error("Erro ao processar JSON", e);
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+                "Erro ao processar dados JSON. Verifique o formato.");
+        problemDetail.setTitle("Erro no Processamento JSON");
+        problemDetail.setProperty("timestamp", Instant.now());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ProblemDetail> handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
+        log.warn("Parâmetro obrigatório ausente", e);
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+                "Parâmetro obrigatório ausente: " + e.getParameterName());
+        problemDetail.setTitle("Parâmetro Obrigatório Ausente");
+        problemDetail.setProperty("timestamp", Instant.now());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
     }
 }

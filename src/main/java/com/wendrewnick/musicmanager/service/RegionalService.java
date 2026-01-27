@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wendrewnick.musicmanager.dto.RegionalExternalDTO;
 import com.wendrewnick.musicmanager.entity.Regional;
+import com.wendrewnick.musicmanager.exception.ExternalApiException;
 import com.wendrewnick.musicmanager.repository.RegionalRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -101,11 +102,20 @@ public class RegionalService {
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() != 200) {
-            throw new RuntimeException("Falha na API externa: " + response.statusCode());
+            throw new ExternalApiException("Falha na API externa: " + response.statusCode());
         }
 
-        return objectMapper.readValue(response.body(), new TypeReference<>() {
-        });
+        String responseBody = response.body();
+        if (responseBody == null || responseBody.isBlank()) {
+            throw new ExternalApiException("Resposta vazia da API externa");
+        }
+
+        try {
+            return objectMapper.readValue(responseBody, new TypeReference<>() {
+            });
+        } catch (Exception e) {
+            throw new ExternalApiException("Erro ao processar resposta da API externa", e);
+        }
     }
 
     public List<Regional> findAll() {
