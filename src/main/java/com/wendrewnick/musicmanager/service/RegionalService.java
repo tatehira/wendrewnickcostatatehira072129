@@ -113,22 +113,22 @@ public class RegionalService {
     }
 
     public List<Regional> findWithFilters(String nome, Integer id, Boolean ativo) {
+        List<Regional> result;
+        
         if (id != null) {
-            return regionalRepository.findByRegionalId(id);
+            result = regionalRepository.findByRegionalId(id);
+        } else if (nome != null && !nome.isBlank()) {
+            if (ativo != null) {
+                result = regionalRepository.findByNomeContainingIgnoreCaseAndAtivo(nome, ativo);
+            } else {
+                result = regionalRepository.findByNomeContainingIgnoreCase(nome);
+            }
+        } else if (ativo != null) {
+            result = regionalRepository.findByAtivo(ativo);
+        } else {
+            result = regionalRepository.findAll();
         }
         
-        if (nome != null && !nome.isBlank() && ativo != null) {
-            return regionalRepository.findByNomeContainingIgnoreCaseAndAtivo(nome, ativo);
-        }
-        
-        if (nome != null && !nome.isBlank()) {
-            return regionalRepository.findByNomeContainingIgnoreCase(nome);
-        }
-        
-        if (ativo != null) {
-            return regionalRepository.findByAtivo(ativo);
-        }
-        
-        return regionalRepository.findAll();
+        return result;
     }
 }
