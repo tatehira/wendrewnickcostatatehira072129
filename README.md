@@ -118,7 +118,7 @@ src/main/java/com/wendrewnick/musicmanager
 - **Imagens:** Apenas no MinIO (chaves em `album_images`). Nada em filesystem ou como BLOB no banco. URLs pré-assinadas com 30 min de expiração.
 - **Regionais:** Tabela `regionais` sincronizada com API externa (`integrador-argus-api.geia.vip`). Sincronização em background (não bloqueia startup) e a cada 1 minuto. Novos → INSERT; ausentes na API → `ativo = false`; alterados → inativa o antigo e insere o novo.
 - **WebSocket:** STOMP em `/ws`, tópico `/topic/albums`. Notificação quando um novo álbum é criado.
-- **Rate limit:** 10 req/min por usuário autenticado (ou por IP quando não autenticado). Resposta 429 em JSON.
+- **Rate limit:** 10 req/min por usuário autenticado (ou por IP quando não autenticado). Resposta 429 em JSON com headers informativos (X-RateLimit-*). Limpeza automática de buckets expirados para evitar memory leak.
 - **CORS:** Origem permitida apenas `localhost:8080` e `localhost:3000`. Nunca `*`.
 - **Health:** Liveness e readiness em `/actuator/health/liveness` e `/actuator/health/readiness`.
 
@@ -136,6 +136,28 @@ Todos os endpoints estão documentados. Upload de capas (criação de álbum com
 
 ---
 
+## Rate Limiting
+
+Rate limit de 10 requisições por minuto por usuário autenticado (ou por IP quando não autenticado). Implementado com Bucket4j usando algoritmo token bucket.
+
+**Comportamento:**
+- Limite aplicado após autenticação (identifica usuário) ou por IP quando não autenticado
+- Resposta 429 (Too Many Requests) em JSON quando excedido
+- Headers informativos: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`, `Retry-After`
+- Endpoints públicos (Swagger, Actuator health) não são limitados
+- Estratégia fail-open: em caso de erro no rate limit, permite a requisição prosseguir
+
+**Configuração:**
+```yaml
+rate-limit:
+  enabled: true
+  requests-per-minute: 10
+```
+
+**Limpeza automática:** Buckets inativos por mais de 10 minutos são removidos automaticamente para evitar memory leak.
+
+---
+
 ## Decisões e trade-offs
 
 - **JWT único para access e refresh:** Mesma estrutura, expirações diferentes. Não há claim `type` para distinguir; em produção faria sentido segregar ou usar refresh tokens opacos.
@@ -143,6 +165,7 @@ Todos os endpoints estão documentados. Upload de capas (criação de álbum com
 - **Bucket MinIO:** Criado pelo job Docker ou na primeira inicialização da app. Em falha de conexão com MinIO, a app sobe mas uploads falham até o MinIO estar disponível.
 - **Ordenação de artistas:** Default `sort=name,asc`. Suporta `sort=name,desc` explicitamente.
 - **Álbuns por solo/banda:** Filtro `soloOrBand=true` (bandas) ou `soloOrBand=false` (solo). Exige atributo `is_band` em `artists`.
+- **Rate limit com fail-open:** Em caso de erro no rate limit, a requisição é permitida (fail-open). Previne que bugs no rate limit bloqueiem a aplicação. Limpeza automática de buckets expirados (10 min de inatividade) previne memory leak em cenários de alto tráfego.
 
 ---
 
