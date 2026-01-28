@@ -58,6 +58,8 @@ O nome do bucket (`minio.bucket-name`) vem do `application.yml` (`music-covers`)
 docker run --rm -v "$(pwd)":/app -w /app maven:3.9-eclipse-temurin-21 mvn test
 ```
 
+Para testar a API manualmente via Swagger, consulte o [Guia de Testes](./GUIA_DE_TESTES.md) com instruções passo a passo de todos os endpoints.
+
 **Windows PowerShell:**
 
 ```powershell
