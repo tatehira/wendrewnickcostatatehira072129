@@ -59,6 +59,14 @@ public class AlbumServiceImpl implements AlbumService {
     @Transactional
     @Override
     public AlbumDTO create(AlbumDTO albumDTO, List<MultipartFile> images) {
+        if (albumDTO == null) {
+            throw new BusinessException("Dados do álbum não podem ser nulos");
+        }
+        
+        if (albumDTO.getArtistIds() == null || albumDTO.getArtistIds().isEmpty()) {
+            throw new BusinessException("Pelo menos um artista é obrigatório");
+        }
+        
         List<Artist> artistList = artistRepository.findAllById(albumDTO.getArtistIds());
 
         if (artistList.isEmpty()) {
@@ -70,16 +78,27 @@ public class AlbumServiceImpl implements AlbumService {
 
         if (images != null && !images.isEmpty()) {
             for (MultipartFile img : images) {
-                if (img == null || img.isEmpty()) {
-                    throw new BusinessException("Arquivo não pode ser vazio");
+                if (img == null) {
+                    continue;
                 }
+                
+                if (img.isEmpty() || img.getSize() == 0) {
+                    continue;
+                }
+                
+                if (img.getOriginalFilename() != null && img.getOriginalFilename().equals("string")) {
+                    continue;
+                }
+                
                 if (img.getContentType() == null || !img.getContentType().startsWith("image/")) {
                     throw new BusinessException("Todos os arquivos devem ser imagens válidas (PNG, JPG, etc).");
                 }
+                
                 if (img.getSize() > 5 * 1024 * 1024) { // 5MB
                     String filename = img.getOriginalFilename() != null ? img.getOriginalFilename() : "arquivo";
                     throw new BusinessException("A imagem " + filename + " excede 5MB.");
                 }
+                
                 String key = minioService.uploadFile(img);
                 imageKeys.add(key);
             }

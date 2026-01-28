@@ -49,12 +49,26 @@ public class AlbumController {
         return ResponseEntity.ok(ApiResponse.success(dto, "Álbum encontrado"));
     }
 
-    @Operation(summary = "Criar um novo álbum", description = "Upload de múltiplas imagens e dados")
+    @Operation(summary = "Criar um novo álbum", description = "Upload de múltiplas imagens e dados (multipart/form-data)")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<AlbumDTO>> createAlbum(
-            @Parameter(description = "Dados do álbum", content = @Content(mediaType = "application/json")) @RequestPart("data") @Valid AlbumDTO albumDTO,
+            @Parameter(description = "Dados do álbum", content = @Content(mediaType = "application/json")) @RequestPart(value = "data", required = false) AlbumDTO albumDTO,
             @RequestPart(value = "images", required = false) List<MultipartFile> images) {
+        
+        if (albumDTO == null) {
+            throw new com.wendrewnick.musicmanager.exception.BusinessException("Campo 'data' é obrigatório. Envie os dados do álbum em formato JSON no campo 'data'.");
+        }
+        
         AlbumDTO created = albumService.create(albumDTO, images);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(created, "Álbum criado com sucesso"));
+    }
+
+    @Operation(summary = "Criar um novo álbum (sem imagens)", description = "Cria álbum apenas com dados, sem upload de imagens")
+    @PostMapping(value = "/simple", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse<AlbumDTO>> createAlbumSimple(
+            @Valid @RequestBody AlbumDTO albumDTO) {
+        AlbumDTO created = albumService.create(albumDTO, null);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(created, "Álbum criado com sucesso"));
     }
@@ -72,7 +86,12 @@ public class AlbumController {
     @PostMapping(value = "/{id}/covers", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<Void>> addCovers(
             @PathVariable UUID id,
-            @RequestPart("files") List<MultipartFile> files) {
+            @RequestPart(value = "files", required = false) List<MultipartFile> files) {
+        
+        if (files == null || files.isEmpty()) {
+            throw new com.wendrewnick.musicmanager.exception.BusinessException("Campo 'files' é obrigatório. Envie pelo menos um arquivo de imagem.");
+        }
+        
         albumService.addCovers(id, files);
         return ResponseEntity.ok(ApiResponse.success(null, "Capas adicionadas"));
     }
