@@ -32,7 +32,7 @@ public class OpenApiConfig {
                 return openApi -> {
                         openApi.getPaths().entrySet().removeIf(entry -> {
                                 String path = entry.getKey();
-                                if (path.contains("**") || path.contains("{") && path.contains("}")) {
+                                if (path.contains("**")) {
                                         return true;
                                 }
                                 return false;

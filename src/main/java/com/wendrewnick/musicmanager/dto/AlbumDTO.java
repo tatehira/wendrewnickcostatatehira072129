@@ -1,5 +1,6 @@
 package com.wendrewnick.musicmanager.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -9,15 +10,18 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.jackson.Jacksonized;
 
 import java.util.List;
 import java.util.UUID;
 
 @Data
 @Builder
+@Jacksonized
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true, value = {"artistNames", "coverUrls"})
 public class AlbumDTO {
 
     private UUID id;
@@ -31,8 +35,10 @@ public class AlbumDTO {
     private Integer year;
 
     @NotNull(message = "Pelo menos um Artista é obrigatório")
+    @Size(min = 1, message = "Pelo menos um Artista é obrigatório")
     private List<UUID> artistIds;
 
     private List<String> artistNames;
+    
     private List<String> coverUrls;
 }

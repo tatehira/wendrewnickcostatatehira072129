@@ -30,6 +30,12 @@ public class MinioServiceImpl implements MinioService {
     @Value("${minio.public-url:${minio.url}}")
     private String minioPublicUrl;
 
+    @Value("${minio.access-key}")
+    private String accessKey;
+
+    @Value("${minio.secret-key}")
+    private String secretKey;
+
     @Override
     public String uploadFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
@@ -59,16 +65,26 @@ public class MinioServiceImpl implements MinioService {
     @Override
     public String getPresignedUrl(String objectName) {
         try {
-            String url = minioClient.getPresignedObjectUrl(
+            if (objectName == null || objectName.isBlank()) {
+                throw new StorageException("Nome do objeto não pode ser vazio");
+            }
+            
+            MinioClient publicClient = MinioClient.builder()
+                    .endpoint(minioPublicUrl)
+                    .credentials(accessKey, secretKey)
+                    .build();
+            
+            return publicClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .method(Method.GET)
                             .bucket(bucketName)
                             .object(objectName)
                             .expiry(30, TimeUnit.MINUTES)
                             .build());
-            return url.replace(minioInternalUrl, minioPublicUrl);
+        } catch (StorageException e) {
+            throw e;
         } catch (Exception e) {
-            throw new StorageException("Erro ao gerar URL pré-assinada", e);
+            throw new StorageException("Erro ao gerar URL pré-assinada para objeto: " + objectName + ". Detalhes: " + e.getMessage(), e);
         }
     }
 }
