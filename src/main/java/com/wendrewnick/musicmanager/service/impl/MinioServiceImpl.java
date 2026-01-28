@@ -65,15 +65,12 @@ public class MinioServiceImpl implements MinioService {
     @Override
     public String getPresignedUrl(String objectName) {
         try {
-            String endpoint = minioPublicUrl;
-            if (endpoint.startsWith("http://")) {
-                endpoint = endpoint.substring(7);
-            } else if (endpoint.startsWith("https://")) {
-                endpoint = endpoint.substring(8);
+            if (objectName == null || objectName.isBlank()) {
+                throw new StorageException("Nome do objeto não pode ser vazio");
             }
             
             MinioClient publicClient = MinioClient.builder()
-                    .endpoint(endpoint)
+                    .endpoint(minioPublicUrl)
                     .credentials(accessKey, secretKey)
                     .build();
             
@@ -84,8 +81,10 @@ public class MinioServiceImpl implements MinioService {
                             .object(objectName)
                             .expiry(30, TimeUnit.MINUTES)
                             .build());
+        } catch (StorageException e) {
+            throw e;
         } catch (Exception e) {
-            throw new StorageException("Erro ao gerar URL pré-assinada", e);
+            throw new StorageException("Erro ao gerar URL pré-assinada para objeto: " + objectName + ". Detalhes: " + e.getMessage(), e);
         }
     }
 }

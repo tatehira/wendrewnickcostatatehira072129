@@ -6,10 +6,13 @@ import com.wendrewnick.musicmanager.service.AlbumService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +28,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/albums")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "Álbuns", description = "Endpoints para gerenciamento de Álbuns")
 @SecurityRequirement(name = "bearerAuth")
 public class AlbumController {
@@ -49,14 +53,37 @@ public class AlbumController {
         return ResponseEntity.ok(ApiResponse.success(dto, "Álbum encontrado"));
     }
 
-    @Operation(summary = "Criar um novo álbum", description = "Upload de múltiplas imagens e dados (multipart/form-data)")
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "Criar um novo álbum",
+            description = "Upload de múltiplas imagens e dados (multipart/form-data). Campo 'data' deve conter JSON com title, year e artistIds. Campo 'images' deve conter os arquivos de imagem.",
+            requestBody = @RequestBody(
+                    description = "Dados do álbum e imagens",
+                    required = true,
+                    content = @Content(
+                            mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
+                            schema = @Schema(implementation = AlbumDTO.class)
+                    )
+            )
+    )
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<AlbumDTO>> createAlbum(
-            @Parameter(description = "Dados do álbum", content = @Content(mediaType = "application/json")) @RequestPart(value = "data", required = false) AlbumDTO albumDTO,
-            @RequestPart(value = "images", required = false) List<MultipartFile> images) {
+            @Parameter(description = "Dados do álbum em JSON", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AlbumDTO.class))) @RequestPart(value = "data", required = false) AlbumDTO albumDTO,
+            @Parameter(description = "Arquivos de imagem (PNG, JPG, etc)", content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE)) @RequestPart(value = "images", required = false) List<MultipartFile> images) {
         
         if (albumDTO == null) {
             throw new com.wendrewnick.musicmanager.exception.BusinessException("Campo 'data' é obrigatório. Envie os dados do álbum em formato JSON no campo 'data'.");
+        }
+        
+        if (albumDTO.getTitle() == null || albumDTO.getTitle().isBlank()) {
+            throw new com.wendrewnick.musicmanager.exception.BusinessException("O título é obrigatório");
+        }
+        
+        if (albumDTO.getYear() == null) {
+            throw new com.wendrewnick.musicmanager.exception.BusinessException("O ano é obrigatório");
+        }
+        
+        if (albumDTO.getArtistIds() == null || albumDTO.getArtistIds().isEmpty()) {
+            throw new com.wendrewnick.musicmanager.exception.BusinessException("Pelo menos um artista é obrigatório");
         }
         
         AlbumDTO created = albumService.create(albumDTO, images);
@@ -68,6 +95,13 @@ public class AlbumController {
     @PostMapping(value = "/simple", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<AlbumDTO>> createAlbumSimple(
             @Valid @RequestBody AlbumDTO albumDTO) {
+        if (albumDTO == null) {
+            throw new com.wendrewnick.musicmanager.exception.BusinessException("Dados do álbum não podem ser nulos");
+        }
+        
+        log.debug("Recebido AlbumDTO - title: {}, year: {}, artistIds: {}", 
+                albumDTO.getTitle(), albumDTO.getYear(), albumDTO.getArtistIds());
+        
         AlbumDTO created = albumService.create(albumDTO, null);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(created, "Álbum criado com sucesso"));

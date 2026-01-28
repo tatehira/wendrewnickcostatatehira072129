@@ -77,16 +77,21 @@ public class AlbumServiceImpl implements AlbumService {
         Set<String> imageKeys = new HashSet<>();
 
         if (images != null && !images.isEmpty()) {
+            log.debug("Processando {} imagem(ns) para o álbum", images.size());
+            int processedCount = 0;
             for (MultipartFile img : images) {
                 if (img == null) {
+                    log.debug("Imagem nula ignorada");
                     continue;
                 }
                 
                 if (img.isEmpty() || img.getSize() == 0) {
+                    log.debug("Imagem vazia ignorada: {}", img.getOriginalFilename());
                     continue;
                 }
                 
                 if (img.getOriginalFilename() != null && img.getOriginalFilename().equals("string")) {
+                    log.debug("Placeholder 'string' ignorado");
                     continue;
                 }
                 
@@ -99,9 +104,19 @@ public class AlbumServiceImpl implements AlbumService {
                     throw new BusinessException("A imagem " + filename + " excede 5MB.");
                 }
                 
-                String key = minioService.uploadFile(img);
-                imageKeys.add(key);
+                try {
+                    String key = minioService.uploadFile(img);
+                    imageKeys.add(key);
+                    processedCount++;
+                    log.debug("Imagem {} processada com sucesso: {}", img.getOriginalFilename(), key);
+                } catch (Exception e) {
+                    log.error("Erro ao fazer upload da imagem {}: {}", img.getOriginalFilename(), e.getMessage(), e);
+                    throw new BusinessException("Erro ao processar imagem " + (img.getOriginalFilename() != null ? img.getOriginalFilename() : "desconhecida") + ": " + e.getMessage());
+                }
             }
+            log.info("Total de {} imagem(ns) processada(s) para o álbum", processedCount);
+        } else {
+            log.debug("Nenhuma imagem fornecida para o álbum");
         }
 
         Album album = Album.builder()
@@ -147,33 +162,84 @@ public class AlbumServiceImpl implements AlbumService {
         if (files == null || files.isEmpty()) {
             throw new BusinessException("Nenhum arquivo enviado");
         }
+        
         if (album.getImages() == null) {
             album.setImages(new HashSet<>());
         }
+        
+        int uploadedCount = 0;
+        Set<String> currentImages = album.getImages();
+        
         for (MultipartFile file : files) {
-            if (file == null || file.isEmpty()) {
-                throw new BusinessException("Arquivo não pode ser vazio");
+            if (file == null) {
+                continue;
             }
+            
+            if (file.isEmpty() || file.getSize() == 0) {
+                continue;
+            }
+            
+            if (file.getOriginalFilename() != null && file.getOriginalFilename().equals("string")) {
+                continue;
+            }
+            
             if (file.getContentType() == null || !file.getContentType().startsWith("image/")) {
-                throw new BusinessException("Arquivo deve ser uma imagem");
+                throw new BusinessException("Todos os arquivos devem ser imagens válidas (PNG, JPG, etc).");
             }
+            
             if (file.getSize() > 5 * 1024 * 1024) {
-                throw new BusinessException("Imagem excede 5MB");
+                String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "arquivo";
+                throw new BusinessException("A imagem " + filename + " excede 5MB.");
             }
-            album.getImages().add(minioService.uploadFile(file));
+            
+            try {
+                String key = minioService.uploadFile(file);
+                currentImages.add(key);
+                uploadedCount++;
+                log.debug("Capa adicionada ao álbum {}: {}", id, key);
+            } catch (Exception e) {
+                log.error("Erro ao fazer upload da capa para o álbum {}: {}", id, e.getMessage(), e);
+                throw new BusinessException("Erro ao processar imagem: " + e.getMessage());
+            }
         }
-        albumRepository.save(album);
+        
+        if (uploadedCount == 0) {
+            throw new BusinessException("Nenhum arquivo válido foi enviado. Verifique se os arquivos são imagens válidas.");
+        }
+        
+        album.setImages(currentImages);
+        Album saved = albumRepository.saveAndFlush(album);
+        
+        log.info("{} capa(s) adicionada(s) ao álbum {}. Total de imagens: {}", uploadedCount, id, saved.getImages() != null ? saved.getImages().size() : 0);
     }
 
     @Override
     public List<String> getCoverUrls(UUID id) {
         Album album = getEntityById(id);
         if (album.getImages() == null || album.getImages().isEmpty()) {
+            log.debug("Álbum {} não possui imagens", id);
             return List.of();
         }
-        return album.getImages().stream()
-                .map(minioService::getPresignedUrl)
+        
+        log.debug("Álbum {} possui {} imagem(ns): {}", id, album.getImages().size(), album.getImages());
+        
+        List<String> urls = album.getImages().stream()
+                .filter(image -> image != null && !image.isBlank())
+                .map(imageKey -> {
+                    try {
+                        String url = minioService.getPresignedUrl(imageKey);
+                        log.debug("URL gerada para imagem {}: {}", imageKey, url);
+                        return url;
+                    } catch (Exception e) {
+                        log.warn("Erro ao gerar URL pré-assinada para imagem {} do álbum {}: {}", imageKey, id, e.getMessage());
+                        return null;
+                    }
+                })
+                .filter(url -> url != null)
                 .collect(Collectors.toList());
+        
+        log.info("Retornando {} URL(s) para o álbum {}", urls.size(), id);
+        return urls;
     }
 
     @Transactional
