@@ -17,15 +17,28 @@ API REST em Java (Spring Boot) para gerenciamento de artistas e álbuns. Relacio
 
 ## Como rodar
 
+### Modo 1 – Docker (recomendado)
+
 **Pré-requisito:** Docker e Docker Compose instalados.
 
 ```bash
-docker-compose up --build
+docker compose up -d --build
 ```
 
-A API sobe na porta 8080. PostgreSQL e MinIO sobem como dependências. O bucket MinIO é criado automaticamente pelo job `createbuckets` ou pela própria aplicação na inicialização (se ainda não existir).
+- A API sobe na porta `8080`.
+- PostgreSQL (`postgres`) e MinIO (`minio`) sobem como dependências.
+- O bucket MinIO é criado automaticamente pelo job `createbuckets`.
+- O profile ativo é `docker` (`SPRING_PROFILES_ACTIVE=docker` no `docker-compose.yml`).
 
-**Nenhum passo manual.** Não use `localhost` dentro dos containers; os serviços se comunicam pelos nomes `postgres` e `minio`.
+**Nenhum passo manual.** Dentro dos containers use sempre os hosts `postgres` e `minio` (nunca `localhost`).
+
+### Modo 2 – Local (fallback sem Docker)
+
+Use o modo local quando **não for possível ou desejável rodar Docker**: máquina sem Docker (ambiente corporativo restrito, política de TI), avaliação do projeto apenas com Java e Maven instalados, ou desenvolvimento rápido sem subir PostgreSQL e MinIO. A API sobe com H2 em memória e storage em disco (`./local-storage`); a lógica de negócio é a mesma do modo Docker.
+
+Comando (PowerShell: aspas no `-D`): `mvn spring-boot:run "-Dspring-boot.run.profiles=local"`
+
+Documentação completa: [MODO_LOCAL.md](MODO_LOCAL.md). O ambiente oficial continua sendo o modo Docker; o modo local não o substitui.
 
 ---
 
@@ -95,8 +108,8 @@ graph TD
     Client["Cliente (Web/Mobile)"] -->|HTTP Request| Controller
     Controller -->|DTO| Service
     Service -->|Entity| Repository
-    Repository -->|SQL| Database[("PostgreSQL")]
-    Service -.->|File Stream| MinIO[("Object Storage")]
+    Repository -->|SQL| Database[("PostgreSQL / H2 (modo PG)") ]
+    Service -.->|File Stream| Storage[("MinIO (docker) / FileSystem (local)")]
 ```
 
 ### Estrutura de Pastas (ASCII)
@@ -116,8 +129,12 @@ src/main/java/com/wendrewnick/musicmanager
 
 - **Camadas:** Controller → Service → Repository. Regras de negócio só nos serviços.
 - **API versionada:** `/api/v1` em todos os endpoints.
-- **Banco:** Flyway para migrações. Schema + seed em `db/migration/`.
-- **Imagens:** Apenas no MinIO (chaves em `album_images`). Nada em filesystem ou como BLOB no banco. URLs pré-assinadas com 30 min de expiração.
+- **Banco:** Flyway para migrações. Schema + seed em `db/migration/`.  
+  - Profile `docker`: PostgreSQL 16 (container).  
+  - Profile `local`: H2 em memória em modo PostgreSQL (mesmos scripts).
+- **Imagens:** Abstração de storage única.  
+  - Profile `docker`: MinIO (chaves em `album_images`, URLs pré-assinadas com 30 min).  
+  - Profile `local`: filesystem (`./local-storage`), URLs via `GET /local-storage/{arquivo}`.
 - **Regionais:** Tabela `regionais` sincronizada com API externa (`integrador-argus-api.geia.vip`). Sincronização em background (não bloqueia startup) e a cada 1 minuto. Novos → INSERT; ausentes na API → `ativo = false`; alterados → inativa o antigo e insere o novo.
 - **WebSocket:** STOMP em `/ws`, tópico `/topic/albums`. Notificação quando um novo álbum é criado.
 - **Rate limit:** 10 req/min por usuário autenticado (ou por IP quando não autenticado). Resposta 429 em JSON com headers informativos (X-RateLimit-*). Limpeza automática de buckets expirados para evitar memory leak.

@@ -7,7 +7,7 @@ import com.wendrewnick.musicmanager.exception.BusinessException;
 import com.wendrewnick.musicmanager.exception.ResourceNotFoundException;
 import com.wendrewnick.musicmanager.repository.AlbumRepository;
 import com.wendrewnick.musicmanager.repository.ArtistRepository;
-import com.wendrewnick.musicmanager.service.MinioService;
+import com.wendrewnick.musicmanager.service.StorageService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -39,7 +39,7 @@ class AlbumServiceImplTest {
     private ArtistRepository artistRepository;
 
     @Mock
-    private MinioService minioService;
+    private StorageService storageService;
 
     @Mock
     private SimpMessagingTemplate messagingTemplate;
@@ -70,14 +70,14 @@ class AlbumServiceImplTest {
         when(artistRepository.findAllById(any())).thenReturn(List.of(artist));
         when(image.getContentType()).thenReturn("image/jpeg");
         when(image.getSize()).thenReturn(1024L);
-        when(minioService.uploadFile(image)).thenReturn("cover-key");
+        when(storageService.uploadFile(image)).thenReturn("cover-key");
         when(albumRepository.save(any(Album.class))).thenReturn(savedAlbum);
 
         AlbumDTO result = albumService.create(inputDTO, List.of(image));
 
         assertNotNull(result);
         assertEquals("Album Title", result.getTitle());
-        verify(minioService).uploadFile(image);
+        verify(storageService).uploadFile(image);
         verify(albumRepository).save(any(Album.class));
         verify(messagingTemplate).convertAndSend(eq("/topic/albums"), any(AlbumDTO.class));
     }
@@ -136,7 +136,7 @@ class AlbumServiceImplTest {
                 .build();
 
         when(albumRepository.findById(id)).thenReturn(Optional.of(album));
-        when(minioService.getPresignedUrl("key")).thenReturn("http://url");
+        when(storageService.getPresignedUrl("key")).thenReturn("http://url");
 
         AlbumDTO result = albumService.findById(id);
 
@@ -265,11 +265,11 @@ class AlbumServiceImplTest {
         when(file.getSize()).thenReturn(1024L);
 
         when(albumRepository.findById(albumId)).thenReturn(Optional.of(album));
-        when(minioService.uploadFile(file)).thenReturn("new-cover-key");
+        when(storageService.uploadFile(file)).thenReturn("new-cover-key");
 
         albumService.addCovers(albumId, List.of(file));
 
-        verify(minioService).uploadFile(file);
+        verify(storageService).uploadFile(file);
         verify(albumRepository).save(album);
         assertTrue(album.getImages().contains("new-cover-key"));
     }
@@ -308,8 +308,8 @@ class AlbumServiceImplTest {
                 .build();
 
         when(albumRepository.findById(albumId)).thenReturn(Optional.of(album));
-        when(minioService.getPresignedUrl("key1")).thenReturn("http://url1");
-        when(minioService.getPresignedUrl("key2")).thenReturn("http://url2");
+        when(storageService.getPresignedUrl("key1")).thenReturn("http://url1");
+        when(storageService.getPresignedUrl("key2")).thenReturn("http://url2");
 
         List<String> urls = albumService.getCoverUrls(albumId);
 

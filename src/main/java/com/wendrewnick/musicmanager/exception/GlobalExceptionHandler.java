@@ -9,10 +9,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -198,5 +200,35 @@ public class GlobalExceptionHandler {
         problemDetail.setTitle("Parâmetro Obrigatório Ausente");
         problemDetail.setProperty("timestamp", Instant.now());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ProblemDetail> handleMissingServletRequestPartException(MissingServletRequestPartException e) {
+        log.warn("Parte obrigatória ausente na requisição multipart", e);
+        String partName = e.getRequestPartName();
+        String detail = "Parte obrigatória ausente: '" + partName + "'. ";
+        if ("data".equals(partName)) {
+            detail += "O endpoint de criação de álbum (POST /api/v1/albums) exige multipart/form-data com a parte 'data' contendo o JSON do álbum (title, year, artistIds) e, opcionalmente, a parte 'images' com os arquivos de capa. Não envie apenas JSON no body; use Content-Type multipart/form-data e envie o JSON na parte nomeada 'data'.";
+        } else {
+            detail += "Envie a requisição com a parte '" + partName + "' preenchida.";
+        }
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, detail);
+        problemDetail.setTitle("Parte da Requisição Ausente");
+        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("parteObrigatoria", partName);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ProblemDetail> handleHttpMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException e) {
+        log.warn("Tipo de mídia não suportado", e);
+        String detail = e.getMessage();
+        if (e.getContentType() != null && e.getContentType().toString().toLowerCase().contains("application/json")) {
+            detail = "Este endpoint não aceita application/json no body. Para criar álbum (POST /api/v1/albums), use Content-Type: multipart/form-data com a parte 'data' (JSON do álbum: title, year, artistIds) e, se quiser, a parte 'images' (arquivos de imagem).";
+        }
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNSUPPORTED_MEDIA_TYPE, detail);
+        problemDetail.setTitle("Tipo de Mídia Não Suportado");
+        problemDetail.setProperty("timestamp", Instant.now());
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(problemDetail);
     }
 }

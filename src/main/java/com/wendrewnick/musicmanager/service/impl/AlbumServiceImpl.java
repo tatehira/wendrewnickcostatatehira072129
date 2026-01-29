@@ -8,7 +8,7 @@ import com.wendrewnick.musicmanager.exception.ResourceNotFoundException;
 import com.wendrewnick.musicmanager.repository.AlbumRepository;
 import com.wendrewnick.musicmanager.repository.ArtistRepository;
 import com.wendrewnick.musicmanager.service.AlbumService;
-import com.wendrewnick.musicmanager.service.MinioService;
+import com.wendrewnick.musicmanager.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -31,7 +31,7 @@ public class AlbumServiceImpl implements AlbumService {
 
     private final AlbumRepository albumRepository;
     private final ArtistRepository artistRepository;
-    private final MinioService minioService;
+    private final StorageService storageService;
     private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional(readOnly = true)
@@ -59,10 +59,17 @@ public class AlbumServiceImpl implements AlbumService {
     @Transactional
     @Override
     public AlbumDTO create(AlbumDTO albumDTO, List<MultipartFile> images) {
+        if (albumDTO == null) {
+            throw new BusinessException("Dados do álbum são obrigatórios. Use multipart/form-data com a parte 'data' contendo o JSON (title, year, artistIds).");
+        }
+        if (albumDTO.getArtistIds() == null || albumDTO.getArtistIds().isEmpty()) {
+            throw new BusinessException("Pelo menos um artista (artistIds) é obrigatório.");
+        }
         List<Artist> artistList = artistRepository.findAllById(albumDTO.getArtistIds());
 
         if (artistList.isEmpty()) {
-            throw new ResourceNotFoundException("Nenhum artista encontrado com os IDs fornecidos");
+            throw new ResourceNotFoundException(
+                    "Nenhum artista encontrado com os IDs fornecidos. Verifique se os UUIDs em artistIds existem (lista em GET /api/v1/artists).");
         }
 
         Set<Artist> artists = new HashSet<>(artistList);
@@ -80,7 +87,7 @@ public class AlbumServiceImpl implements AlbumService {
                     String filename = img.getOriginalFilename() != null ? img.getOriginalFilename() : "arquivo";
                     throw new BusinessException("A imagem " + filename + " excede 5MB.");
                 }
-                String key = minioService.uploadFile(img);
+                String key = storageService.uploadFile(img);
                 imageKeys.add(key);
             }
         }
@@ -141,7 +148,7 @@ public class AlbumServiceImpl implements AlbumService {
             if (file.getSize() > 5 * 1024 * 1024) {
                 throw new BusinessException("Imagem excede 5MB");
             }
-            album.getImages().add(minioService.uploadFile(file));
+            album.getImages().add(storageService.uploadFile(file));
         }
         albumRepository.save(album);
     }
@@ -153,7 +160,7 @@ public class AlbumServiceImpl implements AlbumService {
             return List.of();
         }
         return album.getImages().stream()
-                .map(minioService::getPresignedUrl)
+                .map(storageService::getPresignedUrl)
                 .collect(Collectors.toList());
     }
 
@@ -177,7 +184,7 @@ public class AlbumServiceImpl implements AlbumService {
             presignedUrls = album.getImages().stream()
                     .map(imageKey -> {
                         try {
-                            return minioService.getPresignedUrl(imageKey);
+                            return storageService.getPresignedUrl(imageKey);
                         } catch (Exception e) {
                             log.warn("Erro ao gerar URL para imagem: {}", imageKey, e);
                             return null;
