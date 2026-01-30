@@ -63,8 +63,8 @@ public class ArtistController {
 
     @Operation(summary = "Deletar um artista")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteArtist(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<Void>> deleteArtist(@PathVariable UUID id) {
         artistService.delete(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success(null, "Artista excluído com sucesso"));
     }
 }

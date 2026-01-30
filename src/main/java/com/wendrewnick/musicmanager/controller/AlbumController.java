@@ -49,9 +49,17 @@ public class AlbumController {
         return ResponseEntity.ok(ApiResponse.success(dto, "Álbum encontrado"));
     }
 
-    @Operation(summary = "Criar um novo álbum", description = "Upload de múltiplas imagens e dados")
+    @Operation(summary = "Criar álbum (JSON)", description = "Criar álbum enviando apenas JSON no body. Para enviar capas, use 'Criar álbum (multipart)'.")
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse<AlbumDTO>> createAlbumWithJson(@Valid @RequestBody AlbumDTO albumDTO) {
+        AlbumDTO created = albumService.create(albumDTO, null);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(created, "Álbum criado com sucesso"));
+    }
+
+    @Operation(summary = "Criar álbum (multipart)", description = "Criar álbum com dados na parte 'data' (JSON) e opcionalmente capas na parte 'images'.")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<AlbumDTO>> createAlbum(
+    public ResponseEntity<ApiResponse<AlbumDTO>> createAlbumWithMultipart(
             @Parameter(description = "Dados do álbum", content = @Content(mediaType = "application/json")) @RequestPart("data") @Valid AlbumDTO albumDTO,
             @RequestPart(value = "images", required = false) List<MultipartFile> images) {
         AlbumDTO created = albumService.create(albumDTO, images);
@@ -85,8 +93,8 @@ public class AlbumController {
 
     @Operation(summary = "Deletar um álbum")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAlbum(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<Void>> deleteAlbum(@PathVariable UUID id) {
         albumService.delete(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success(null, "Álbum excluído com sucesso"));
     }
 }
