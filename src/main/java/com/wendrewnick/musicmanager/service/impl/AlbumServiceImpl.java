@@ -59,10 +59,17 @@ public class AlbumServiceImpl implements AlbumService {
     @Transactional
     @Override
     public AlbumDTO create(AlbumDTO albumDTO, List<MultipartFile> images) {
+        if (albumDTO == null) {
+            throw new BusinessException("Dados do álbum são obrigatórios. Envie um JSON com title, year e artistIds.");
+        }
+        if (albumDTO.getArtistIds() == null || albumDTO.getArtistIds().isEmpty()) {
+            throw new BusinessException("Pelo menos um artista (artistIds) é obrigatório. Liste os UUIDs dos artistas (ex.: GET /api/v1/artists).");
+        }
         List<Artist> artistList = artistRepository.findAllById(albumDTO.getArtistIds());
 
         if (artistList.isEmpty()) {
-            throw new ResourceNotFoundException("Nenhum artista encontrado com os IDs fornecidos");
+            throw new ResourceNotFoundException(
+                    "Nenhum artista encontrado com os IDs fornecidos. Verifique se os UUIDs em artistIds existem (lista em GET /api/v1/artists).");
         }
 
         Set<Artist> artists = new HashSet<>(artistList);

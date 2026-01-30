@@ -10,6 +10,8 @@ import lombok.NoArgsConstructor;
 import java.util.Set;
 import java.util.UUID;
 
+import lombok.ToString;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -31,5 +33,7 @@ public class Artist extends BaseEntity {
     private boolean band = true;
 
     @ManyToMany(mappedBy = "artists", fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<Album> albums;
 }

@@ -37,37 +37,69 @@ public class OpenApiConfig {
                                 }
                                 return false;
                         });
-                        
+
                         openApi.getPaths().forEach((path, pathItem) -> {
                                 if (path.startsWith("/actuator")) {
                                         pathItem.readOperations().forEach(operation -> {
-                                                if (operation.getTags() != null && operation.getTags().stream().anyMatch(t -> "Actuator".equalsIgnoreCase(t))) {
+                                                if (operation.getTags() != null && operation.getTags().stream()
+                                                                .anyMatch(t -> "Actuator".equalsIgnoreCase(t))) {
                                                         operation.setTags(java.util.List.of("Atuador"));
 
                                                         if (path.equals("/actuator")) {
                                                                 operation.setSummary("Ponto de entrada do Atuador");
-                                                                operation.setDescription("Lista todos os endpoints de monitoramento disponíveis.");
-                                                        } else if (path.equals("/actuator/health") || path.equals("/actuator/health/liveness") || path.equals("/actuator/health/readiness")) {
+                                                                operation.setDescription(
+                                                                                "Lista todos os endpoints de monitoramento disponíveis.");
+                                                        } else if (path.equals("/actuator/health")
+                                                                        || path.equals("/actuator/health/liveness")
+                                                                        || path.equals("/actuator/health/readiness")) {
                                                                 operation.setSummary("Status de Saúde");
-                                                                operation.setDescription("Verifica se a aplicação e suas dependências estão funcionando (UP/DOWN).");
+                                                                operation.setDescription(
+                                                                                "Verifica se a aplicação e suas dependências estão funcionando (UP/DOWN).");
                                                         } else if (path.startsWith("/actuator/info")) {
                                                                 operation.setSummary("Informações da Aplicação");
-                                                                operation.setDescription("Retorna detalhes sobre a versão e build da aplicação.");
+                                                                operation.setDescription(
+                                                                                "Retorna detalhes sobre a versão e build da aplicação.");
                                                         } else if (path.startsWith("/actuator/metrics")) {
                                                                 operation.setSummary("Métricas");
-                                                                operation.setDescription("Exibe métricas de performance, memória e uso de recursos.");
+                                                                operation.setDescription(
+                                                                                "Exibe métricas de performance, memória e uso de recursos.");
                                                         } else if (path.startsWith("/actuator/prometheus")) {
                                                                 operation.setSummary("Métricas Prometheus");
-                                                                operation.setDescription("Expõe métricas no formato compatível com Prometheus.");
+                                                                operation.setDescription(
+                                                                                "Expõe métricas no formato compatível com Prometheus.");
                                                         }
                                                 }
                                         });
                                 }
                         });
-                        
+
                         if (openApi.getTags() != null) {
                                 openApi.getTags().removeIf(tag -> "Actuator".equalsIgnoreCase(tag.getName()));
                         }
+                };
+        }
+
+        @org.springframework.context.annotation.Bean
+        public org.springdoc.core.customizers.OpenApiCustomizer prioritizeJsonCustomizer() {
+                return openApi -> {
+                        openApi.getPaths().forEach((path, pathItem) -> {
+                                if ("/api/v1/albums".equals(path) && pathItem.getPost() != null
+                                                && pathItem.getPost().getRequestBody() != null) {
+                                        io.swagger.v3.oas.models.media.Content content = pathItem.getPost()
+                                                        .getRequestBody().getContent();
+                                        if (content != null && content.containsKey(
+                                                        org.springframework.http.MediaType.APPLICATION_JSON_VALUE)) {
+                                                io.swagger.v3.oas.models.media.MediaType jsonMedia = content.remove(
+                                                                org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
+                                                io.swagger.v3.oas.models.media.Content newContent = new io.swagger.v3.oas.models.media.Content();
+                                                newContent.addMediaType(
+                                                                org.springframework.http.MediaType.APPLICATION_JSON_VALUE,
+                                                                jsonMedia);
+                                                newContent.putAll(content);
+                                                pathItem.getPost().getRequestBody().setContent(newContent);
+                                        }
+                                }
+                        });
                 };
         }
 }
