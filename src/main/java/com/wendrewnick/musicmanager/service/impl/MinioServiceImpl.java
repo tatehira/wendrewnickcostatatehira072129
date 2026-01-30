@@ -20,27 +20,22 @@ import java.util.concurrent.TimeUnit;
 public class MinioServiceImpl implements MinioService {
 
     private final MinioClient minioClient;
+    private final MinioClient minioSignerClient;
 
     @Value("${minio.bucket-name}")
     private String bucketName;
-
-    @Value("${minio.url}")
-    private String minioInternalUrl;
-
-    @Value("${minio.public-url:${minio.url}}")
-    private String minioPublicUrl;
 
     @Override
     public String uploadFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new StorageException("Arquivo não pode ser vazio");
         }
-        
+
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null || originalFilename.isBlank()) {
             originalFilename = "arquivo";
         }
-        
+
         String fileName = UUID.randomUUID() + "_" + originalFilename;
         try (InputStream inputStream = file.getInputStream()) {
             minioClient.putObject(
@@ -59,14 +54,13 @@ public class MinioServiceImpl implements MinioService {
     @Override
     public String getPresignedUrl(String objectName) {
         try {
-            String url = minioClient.getPresignedObjectUrl(
+            return minioSignerClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .method(Method.GET)
                             .bucket(bucketName)
                             .object(objectName)
                             .expiry(30, TimeUnit.MINUTES)
                             .build());
-            return url.replace(minioInternalUrl, minioPublicUrl);
         } catch (Exception e) {
             throw new StorageException("Erro ao gerar URL pré-assinada", e);
         }

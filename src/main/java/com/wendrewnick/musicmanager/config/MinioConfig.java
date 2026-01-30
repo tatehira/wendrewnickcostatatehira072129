@@ -16,11 +16,23 @@ public class MinioConfig {
     @Value("${minio.secret-key}")
     private String secretKey;
 
+    @Value("${minio.public-url:${minio.url}}")
+    private String publicUrl;
+
     @Bean
     public MinioClient minioClient() {
         return MinioClient.builder()
                 .endpoint(url)
                 .credentials(accessKey, secretKey)
+                .build();
+    }
+
+    @Bean
+    public MinioClient minioSignerClient() {
+        return MinioClient.builder()
+                .endpoint(publicUrl)
+                .credentials(accessKey, secretKey)
+                .region("us-east-1")
                 .build();
     }
 }
