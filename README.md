@@ -152,17 +152,18 @@ A API notifica clientes conectados sempre que um **novo álbum é cadastrado** (
 - **Origens Permitidas (CORS):** `http://localhost:8080`, `http://localhost:3000`
 
 ### Como Testar
-Para validar o recebimento de notificações sem criar um frontend completo, utilize o arquivo `websocket-test.html` incluído na raiz do projeto.
+Para validar o recebimento de notificações de forma isolada e segura:
 
-1.  **Inicie o servidor de teste (para contornar CORS):**
-    A API bloqueia origens desconhecidas. Sirva o arquivo HTML na porta 3000:
+1.  **Inicie o servidor de teste:**
+    Uma pasta `test-client` foi preparada contendo apenas o cliente HTML necessário.
     ```bash
-    npx serve -l 3000
-    # Ou use Python: python -m http.server 3000
+    npx serve test-client -l 3000
+    # O comando serve apenas o conteúdo da pasta 'test-client'
     ```
 
 2.  **Acesse o cliente:**
-    Abra [http://localhost:3000/websocket-test.html](http://localhost:3000/websocket-test.html) no navegador.
+    Abra [http://localhost:3000](http://localhost:3000) no navegador (ou o IP correspondente).
+    - Você verá apenas a interface de teste, sem expor os arquivos do projeto.
     - O status deve mudar para **Connected**.
 
 3.  **Dispare um evento:**
