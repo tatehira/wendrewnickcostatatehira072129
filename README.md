@@ -138,7 +138,38 @@ Todos os endpoints estão documentados. Upload de capas (criação de álbum com
 
 ---
 
-## Rate Limiting
+---
+
+## WebSocket (Notificações em Tempo Real)
+
+A API notifica clientes conectados sempre que um **novo álbum é cadastrado** (`POST /api/v1/albums`).
+
+### Detalhes de Conexão
+- **Endpoint:** `http://localhost:8080/ws`
+- **Protocolo:** SockJS + STOMP
+- **Tópico de Assinatura:** `/topic/albums`
+- **Origens Permitidas (CORS):** `http://localhost:8080`, `http://localhost:3000`
+
+### Como Testar
+Para validar o recebimento de notificações sem criar um frontend completo, utilize o arquivo `websocket-test.html` incluído na raiz do projeto.
+
+1.  **Inicie o servidor de teste (para contornar CORS):**
+    A API bloqueia origens desconhecidas. Sirva o arquivo HTML na porta 3000:
+    ```bash
+    npx serve -l 3000
+    # Ou use Python: python -m http.server 3000
+    ```
+
+2.  **Acesse o cliente:**
+    Abra [http://localhost:3000/websocket-test.html](http://localhost:3000/websocket-test.html) no navegador.
+    - O status deve mudar para **Connected**.
+
+3.  **Dispare um evento:**
+    Crie um novo álbum via Swagger ou Curl.
+    - Assim que o álbum for criado (HTTP 201), o navegador exibirá logs do JSON recebido em tempo real.
+
+---
+
 
 Rate limit de 10 requisições por minuto por usuário autenticado (ou por IP quando não autenticado). Implementado com Bucket4j usando algoritmo token bucket.
 
