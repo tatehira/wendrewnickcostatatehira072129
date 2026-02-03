@@ -4,10 +4,14 @@ import com.wendrewnick.musicmanager.dto.ApiResponse;
 import com.wendrewnick.musicmanager.dto.AlbumDTO;
 import com.wendrewnick.musicmanager.service.AlbumService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+
+import io.swagger.v3.oas.annotations.Parameter;
+
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -30,6 +34,7 @@ import java.util.UUID;
 public class AlbumController {
 
     private final AlbumService albumService;
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     @Operation(summary = "Listar álbuns", description = "Paginação. Filtros: title, artistName, soloOrBand (true=band, false=solo).")
     @GetMapping
@@ -49,7 +54,7 @@ public class AlbumController {
         return ResponseEntity.ok(ApiResponse.success(dto, "Álbum encontrado"));
     }
 
-    @Operation(summary = "Criar álbum (JSON)", description = "Criar álbum enviando apenas JSON no body. Para enviar capas, use 'Criar álbum (multipart)'.")
+    @Operation(summary = "Criar álbum (Com ou sem capas)", description = "Criar álbum enviando apenas JSON no body. Para enviar capas, use 'Criar álbum (multipart)'.")
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<AlbumDTO>> createAlbumWithJson(@Valid @RequestBody AlbumDTO albumDTO) {
         AlbumDTO created = albumService.create(albumDTO, null);
@@ -60,8 +65,17 @@ public class AlbumController {
     @Operation(summary = "Criar álbum (multipart)", description = "Criar álbum com dados na parte 'data' (JSON) e opcionalmente capas na parte 'images'.")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<AlbumDTO>> createAlbumWithMultipart(
-            @Parameter(description = "Dados do álbum", content = @Content(mediaType = "application/json")) @RequestPart("data") @Valid AlbumDTO albumDTO,
+            @Parameter(description = "Dados do álbum", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = AlbumDTO.class))) @RequestPart("data") MultipartFile albumDTOFile,
             @RequestPart(value = "images", required = false) List<MultipartFile> images) {
+
+        AlbumDTO albumDTO;
+        try {
+            albumDTO = objectMapper.readValue(albumDTOFile.getInputStream(), AlbumDTO.class);
+        } catch (java.io.IOException e) {
+            throw new com.wendrewnick.musicmanager.exception.BusinessException(
+                    "Erro ao processar JSON da parte 'data': " + e.getMessage());
+        }
+
         AlbumDTO created = albumService.create(albumDTO, images);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(created, "Álbum criado com sucesso"));
