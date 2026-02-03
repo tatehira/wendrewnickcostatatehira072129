@@ -97,6 +97,7 @@ graph TD
     Service -->|Entity| Repository
     Repository -->|SQL| Database[("PostgreSQL")]
     Service -.->|File Stream| MinIO[("Object Storage")]
+    Service -.->|WebSocket Event| Client
 ```
 
 ### Estrutura de Pastas (ASCII)
