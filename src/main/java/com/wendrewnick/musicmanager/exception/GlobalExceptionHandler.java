@@ -114,7 +114,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ProblemDetail> handleStorageException(StorageException e) {
         log.error("Erro no armazenamento", e);
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE,
-                "Erro ao processar arquivo. Tente novamente mais tarde.");
+                "Erro ao processar arquivo: " + e.getMessage() + ". Cause: "
+                        + (e.getCause() != null ? e.getCause().getMessage() : "N/A"));
         problemDetail.setTitle("Erro no Armazenamento");
         problemDetail.setProperty("timestamp", Instant.now());
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(problemDetail);
@@ -161,7 +162,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ProblemDetail> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
+    public ResponseEntity<ProblemDetail> handleMethodArgumentTypeMismatchException(
+            MethodArgumentTypeMismatchException e) {
         log.warn("Tipo de argumento inválido", e);
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
                 "Formato de parâmetro inválido. Verifique o tipo de dados enviado.");
@@ -191,7 +193,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
-    public ResponseEntity<ProblemDetail> handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
+    public ResponseEntity<ProblemDetail> handleMissingServletRequestParameterException(
+            MissingServletRequestParameterException e) {
         log.warn("Parâmetro obrigatório ausente", e);
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
                 "Parâmetro obrigatório ausente: " + e.getParameterName());
