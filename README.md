@@ -157,8 +157,11 @@ Para validar o recebimento de notificações de forma isolada e segura:
 1.  **Inicie o servidor de teste:**
     Uma pasta `test-client` foi preparada contendo apenas o cliente HTML necessário.
     ```bash
+    # Windows / Linux / Mac (com Node.js instalado)
     npx serve test-client -l 3000
-    # O comando serve apenas o conteúdo da pasta 'test-client'
+    
+    # Alternativa Linux (Python 3)
+    python3 -m http.server 3000 --directory test-client
     ```
 
 2.  **Acesse o cliente:**
