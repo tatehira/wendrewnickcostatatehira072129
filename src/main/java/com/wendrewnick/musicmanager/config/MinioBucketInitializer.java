@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@org.springframework.context.annotation.Profile("!test")
 public class MinioBucketInitializer implements ApplicationRunner {
 
     private final MinioClient minioClient;
