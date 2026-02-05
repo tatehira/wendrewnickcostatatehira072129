@@ -4,14 +4,10 @@ import com.wendrewnick.musicmanager.dto.ApiResponse;
 import com.wendrewnick.musicmanager.dto.AlbumDTO;
 import com.wendrewnick.musicmanager.service.AlbumService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-
 import io.swagger.v3.oas.annotations.Parameter;
-
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -23,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,7 +31,6 @@ import java.util.UUID;
 public class AlbumController {
 
     private final AlbumService albumService;
-    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     @Operation(summary = "Listar álbuns", description = "Paginação. Filtros: title, artistName, soloOrBand (true=band, false=solo).")
     @GetMapping
@@ -62,21 +58,51 @@ public class AlbumController {
                 .body(ApiResponse.success(created, "Álbum criado com sucesso"));
     }
 
-    @Operation(summary = "Criar álbum (multipart)", description = "Criar álbum com dados na parte 'data' (JSON) e opcionalmente capas na parte 'images'.")
+    @Operation(summary = "Criar álbum (multipart)", description = "Criar álbum com campos individuais e anexar capa(s) abaixo.")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<AlbumDTO>> createAlbumWithMultipart(
-            @Parameter(description = "Dados do álbum", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = AlbumDTO.class))) @RequestPart("data") MultipartFile albumDTOFile,
-            @RequestPart(value = "images", required = false) List<MultipartFile> images) {
+            @Parameter(description = "Título do álbum") @RequestPart("title") String title,
+            @Parameter(description = "Ano de lançamento (ex: 2024)") @RequestPart("year") String yearStr,
+            @Parameter(description = "UUIDs dos artistas separados por vírgula (ex: uuid1,uuid2). Use GET /api/v1/artists", schema = @Schema(example = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a01")) @RequestPart("artistIds") String artistIds,
+            @Parameter(description = "Capa(s) do álbum (imagens)") @RequestPart(value = "images", required = false) List<MultipartFile> images) {
 
-        AlbumDTO albumDTO;
+        List<UUID> artistIdList;
         try {
-            albumDTO = objectMapper.readValue(albumDTOFile.getInputStream(), AlbumDTO.class);
-        } catch (java.io.IOException e) {
+            artistIdList = Arrays.stream(artistIds.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .map(UUID::fromString)
+                    .toList();
+        } catch (IllegalArgumentException e) {
             throw new com.wendrewnick.musicmanager.exception.BusinessException(
-                    "Erro ao processar JSON da parte 'data': " + e.getMessage());
+                    "artistIds inválido: use UUIDs separados por vírgula (ex: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a01). " + e.getMessage());
+        }
+        if (artistIdList.isEmpty()) {
+            throw new com.wendrewnick.musicmanager.exception.BusinessException("Pelo menos um artista (artistIds) é obrigatório.");
         }
 
-        AlbumDTO created = albumService.create(albumDTO, images);
+        int year;
+        try {
+            year = Integer.parseInt(yearStr.trim());
+        } catch (NumberFormatException e) {
+            throw new com.wendrewnick.musicmanager.exception.BusinessException("Ano inválido: " + yearStr + ". Use um número (ex: 2024).");
+        }
+        if (year < 1900) {
+            throw new com.wendrewnick.musicmanager.exception.BusinessException("Ano deve ser maior ou igual a 1900.");
+        }
+
+        AlbumDTO albumDTO = AlbumDTO.builder()
+                .title(title)
+                .year(year)
+                .artistIds(artistIdList)
+                .build();
+
+        // Filtra imagens vazias (ex.: quando Swagger envia part sem arquivo)
+        List<MultipartFile> validImages = (images != null)
+                ? images.stream().filter(f -> f != null && !f.isEmpty()).toList()
+                : null;
+
+        AlbumDTO created = albumService.create(albumDTO, (validImages != null && !validImages.isEmpty()) ? validImages : null);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(created, "Álbum criado com sucesso"));
     }
