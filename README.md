@@ -52,27 +52,44 @@ O nome do bucket (`minio.bucket-name`) vem do `application.yml` (`music-covers`)
 
 ## Como testar
 
-**Via Docker (recomendado)** - não requer Java instalado:
+### Testes automáticos (unitários + integração)
+
+**Via Docker** – não requer Java instalado:
 
 ```bash
+# Linux / macOS
 docker run --rm -v "$(pwd)":/app -w /app maven:3.9-eclipse-temurin-21 mvn test
-```
 
-Para testar a API manualmente via Swagger, consulte o [Guia de Testes](./GUIA_DE_TESTES.md) com instruções passo a passo de todos os endpoints.
-
-**Windows PowerShell:**
-
-```powershell
+# Windows PowerShell
 docker run --rm -v "${PWD}:/app" -w /app maven:3.9-eclipse-temurin-21 mvn test
 ```
 
-**Com Maven local** (requer Java 21):
+**Com Maven local** (Java 21):
 
 ```bash
 ./mvnw test
 ```
 
-Testes unitários cobrem a camada de serviço (Artist, Album, regras de negócio). Nenhum teste de integração ou E2E.
+**Executar apenas testes de integração:**
+
+```bash
+./mvnw test -Dtest=AlbumArtistIntegrationTest
+```
+
+**Executar apenas testes unitários** (exclui integração):
+
+```bash
+./mvnw test -Dtest='*ServiceImplTest'
+```
+
+### Tipos de testes
+
+| Tipo | Localização | Descrição |
+|------|-------------|-----------|
+| **Unitários** | `*ServiceImplTest` | Camada de serviço com mocks (Artist, Album, Auth) |
+| **Integração** | `AlbumArtistIntegrationTest` | Fluxo HTTP completo: login, CRUD de artistas/álbuns, health checks (usa H2 em memória) |
+
+Para testar a API manualmente via Swagger, consulte o [Guia de Testes](./GUIA_DE_TESTES.md).
 
 ---
 
@@ -221,7 +238,7 @@ rate-limit:
 
 - **Quarkus:** Escolhido Spring Boot para alinhar ao ecossistema já usado (Actuator, Spring Security, Spring Data, etc.).
 - **i18n formal:** Mensagens em PT-BR fixas. Não há suporte a múltiplos idiomas via properties.
-- **Testes de integração / E2E:** Apenas testes unitários na camada de serviço. Cobrir controllers e fluxos completos aumentaria o escopo; o foco foi em regras de negócio.
+- **Testes E2E:** Testes de integração cobrem os fluxos principais (login, CRUD, health). Não há testes E2E end-to-end com UI.
 - **Refresh token com revogação:** Tokens não são persistidos nem invalidados. Logout é apenas client-side.
 
 ---
